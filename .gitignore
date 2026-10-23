@@ -25,3 +25,5 @@ dist-ssr
 !.env.example
 *.tsbuildinfo
 .private/
+__pycache__/
+*.pyc

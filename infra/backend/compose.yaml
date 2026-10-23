@@ -1,0 +1,135 @@
+name: rhhub-backend
+services:
+  db:
+    image: supabase/postgres:17.6.1.136
+    restart: unless-stopped
+    mem_limit: 320m
+    shm_size: 128m
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      PGDATABASE: postgres
+      JWT_EXP: 3600
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - db-config:/etc/postgresql-custom
+      - ./roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
+    command: [postgres, -c, config_file=/etc/postgresql/postgresql.conf, -c, shared_buffers=64MB, -c, max_connections=40, -c, work_mem=2MB, -c, maintenance_work_mem=32MB]
+    healthcheck:
+      test: [CMD, pg_isready, -U, postgres, -h, localhost]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  auth:
+    image: supabase/gotrue:v2.197.0
+    restart: unless-stopped
+    mem_limit: 96m
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: https://rh.atisolution.com.br/backend
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      GOTRUE_SITE_URL: https://rh.atisolution.com.br
+      GOTRUE_URI_ALLOW_LIST: https://rh.atisolution.com.br/**
+      GOTRUE_DISABLE_SIGNUP: "true"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "false"
+      GOTRUE_PASSWORD_MIN_LENGTH: 8
+    healthcheck:
+      test: [CMD, wget, --no-verbose, --tries=1, --spider, http://localhost:9999/health]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  rest:
+    image: postgrest/postgrest:v14.18
+    restart: unless-stopped
+    mem_limit: 64m
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_MAX_ROWS: 1000
+      PGRST_DB_POOL: 5
+      PGRST_DB_EXTRA_SEARCH_PATH: public,extensions
+  gateway:
+    image: nginx:stable-alpine@sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951
+    restart: unless-stopped
+    mem_limit: 32m
+    depends_on: [auth, rest]
+    ports:
+      - "127.0.0.1:18120:80"
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      NGINX_ENVSUBST_FILTER: ^(ANON_KEY|SERVICE_ROLE_KEY)$$
+    volumes:
+      - ./gateway.conf.template:/etc/nginx/templates/default.conf.template:ro
+  storage:
+    image: supabase/storage-api:v1.81.0
+    restart: unless-stopped
+    mem_limit: 192m
+    depends_on:
+      db:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://rest:3000
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      STORAGE_PUBLIC_URL: https://rh.atisolution.com.br/backend
+      REQUEST_ALLOW_X_FORWARDED_PATH: "true"
+      FILE_SIZE_LIMIT: 5242880
+      STORAGE_BACKEND: file
+      GLOBAL_S3_BUCKET: rhhub
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: rhhub
+      REGION: local
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes:
+      - storage-data:/var/lib/storage
+    healthcheck:
+      test: [CMD, wget, --no-verbose, --tries=1, --spider, http://127.0.0.1:5000/status]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  functions:
+    image: supabase/edge-runtime:v1.77.4
+    restart: unless-stopped
+    mem_limit: 256m
+    depends_on: [gateway]
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      SUPABASE_URL: http://gateway
+      SUPABASE_PUBLIC_URL: https://rh.atisolution.com.br/backend
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      WEBHOOK_TOKEN: ${WEBHOOK_TOKEN}
+    volumes:
+      - ./functions:/home/deno/functions:ro
+      - deno-cache:/root/.cache/deno
+    command: [start, --main-service, /home/deno/functions/main]
+volumes:
+  db-data:
+  db-config:
+  storage-data:
+  deno-cache:
+

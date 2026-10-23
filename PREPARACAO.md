@@ -14,16 +14,14 @@ RepositÃ³rio: https://github.com/atisolutionbr/rhhub
 - Nginx: assets versionados com cache longo, HTML e service worker revalidados, gzip e bloqueio de arquivos ocultos.
 - VersÃµes de produÃ§Ã£o geridas por compose.production.yaml, com imagem fixada por digest e logs limitados. Preservar a versÃ£o anterior para rollback.
 
-## Dados
+## Dados e backend da VPS
 
-Snapshot privado local contÃ©m dados pÃºblicos visÃ­veis via API: 5.028 vagas, 15 empresas, 48 tecnologias, 12 categorias, seis planos, 48 referÃªncias salariais e 20 rankings. Contagens conferidas. NÃ£o Ã© um backup transacional nem inclui Auth, dados privados, Storage ou segredos.
+Exportação administrativa integral obtida por SQL, sem transferência Claim: 20 tabelas, 5.028 vagas, oito usuários Auth, oito identidades e metadados de um currículo privado. PostgreSQL restaurado na VPS; hashes de senha preservados. Backups integrais privados fora do Git.
 
-Backend Bolt/Supabase original continua sendo utilizado. PostgreSQL, Auth, Storage e Edge Functions ainda nÃ£o foram transferidos para a VPS.
+PostgreSQL, Auth, REST, Storage e sete funções executam no projeto isolado rhhub-backend. Migrações 021 e 022 aplicadas no clone para proteção de privilégios, assinaturas e importadores. Doze verificações do banco passaram; envio e download privado, negação de acesso entre candidatos, cadastro e login por senha passaram em testes com dados temporários, removidos ao término.
 
-A migraÃ§Ã£o 021 protege os campos de privilÃ©gio em public.users e estÃ¡ preparada no repositÃ³rio, mas NÃƒO aplicada ao backend original. A validaÃ§Ã£o do tipo no create-user tambÃ©m continua pendente de implantaÃ§Ã£o no backend. O ZIP inclui migraÃ§Ãµes histÃ³ricas, nÃ£o um dump de produÃ§Ã£o; nÃ£o executar seeds sobre a base atual.
+Frontend r3 publicado com botão Baixar currículo. Ainda aponta para o backend original: falta o conteúdo do único arquivo privado e a homologação final das funções antes da troca. A conta demo não é dona desse arquivo. Não desativar o original antes da conferência final.
 
-A transferÃªncia Claim para Supabase foi bloqueada pela revisÃ£o automÃ¡tica por falta de destino/plano definido e possÃ­vel reduÃ§Ã£o da proteÃ§Ã£o contra senhas vazadas no plano gratuito. A conta precisa ser criada/autenticada e o destino confirmado antes da exportaÃ§Ã£o administrativa completa.
+## Limites da validação
 
-## Limites da validaÃ§Ã£o
-
-ValidaÃ§Ã£o pÃºblica nÃ£o equivale Ã  homologaÃ§Ã£o autenticada completa de candidato, empresa, admin, importadores, pagamentos ou processamento de currÃ­culos. As funÃ§Ãµes originais e polÃ­ticas de banco precisam de revisÃ£o e teste apÃ³s obter acesso administrativo. NÃ£o desativar o backend original.
+Cobrança PIX continua manual. SMTP de recuperação de senha e homologação completa de extração de PDF/DOCX e importadores ainda pendentes. Os testes de login com conta temporária da VPS não comprovam conhecimento da senha atual de uma conta original. Não declarar a migração concluída enquanto o frontend continuar no backend original.

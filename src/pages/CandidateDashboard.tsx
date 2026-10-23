@@ -604,6 +604,24 @@ function ProfileTab() {
   const [uploadingResume, setUploadingResume] = useState(false);
   const [parsingResume, setParsingResume] = useState(false);
   const [resumeParseMsg, setResumeParseMsg] = useState("");
+  const [downloadingResume, setDownloadingResume] = useState(false);
+
+  const handleResumeDownload = async () => {
+    if (!form.resume_url) return;
+    setDownloadingResume(true);
+    try {
+      const { data, error } = await supabase.storage.from("resumes").download(form.resume_url);
+      if (error || !data) throw new Error("download");
+      const url = URL.createObjectURL(data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = form.resume_url.split("/").pop() || "curriculo";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setResumeParseMsg("Não foi possível baixar o currículo. Tente novamente.");
+    } finally { setDownloadingResume(false); }
+  };
   const [saveError, setSaveError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -776,7 +794,7 @@ function ProfileTab() {
     setForm((prev) => ({ ...prev, resume_url: fileName }));
     setUploadingResume(false);
     setParsingResume(true);
-    setResumeParseMsg("Lendo currículo com IA...");
+    setResumeParseMsg("Lendo currículo...");
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -785,7 +803,7 @@ function ProfileTab() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${anonKey}`,
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ""}`,
           apikey: anonKey,
         },
         body: JSON.stringify({ file_path: fileName, file_type: file.type }),
@@ -844,7 +862,7 @@ function ProfileTab() {
           </div>
           <div>
             <h3 className="font-semibold text-slate-900 dark:text-white">Currículo</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Importe seu currículo (.pdf, .doc, .docx) e a IA pré-preenche seus dados</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Envie seu currículo. A leitura automática de PDF e DOCX ajuda a preencher seu perfil.</p>
           </div>
         </div>
 
@@ -852,6 +870,9 @@ function ProfileTab() {
           <div className="flex items-center gap-3 rounded-lg bg-green-50 dark:bg-green-950/30 p-3">
             <Check className="h-5 w-5 text-green-600" />
             <span className="text-sm text-green-800 flex-1">Currículo enviado: {form.resume_url.split("/").pop()}</span>
+            <button type="button" onClick={handleResumeDownload} disabled={downloadingResume} className="btn-secondary">
+              {downloadingResume ? "Baixando..." : "Baixar currículo"}
+            </button>
             {editing && (
               <button
                 type="button"

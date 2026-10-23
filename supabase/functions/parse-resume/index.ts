@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
+import { Buffer } from "node:buffer";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -62,20 +63,20 @@ Deno.serve(async (req: Request) => {
 
     if (file_type === "application/pdf") {
       text = await extractPdfText(fileData);
-    } else if (
-      file_type === "application/msword" ||
-      file_type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
+    } else if (file_type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
       text = await extractDocxText(fileData);
     } else if (file_type === "text/plain") {
       text = await fileData.text();
     } else {
-      return new Response(JSON.stringify({ error: "Formato não suportado. Use PDF, DOC ou DOCX." }), {
+        return new Response(JSON.stringify({ error: "Para leitura automática, converta o currículo para PDF, DOCX ou texto." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    if (!text.trim()) return new Response(JSON.stringify({ error: "Não foi possível extrair texto. Se o PDF for uma imagem, envie uma versão com texto selecionável." }), {
+      status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
     const parsed = parseResumeText(text);
 
     return new Response(JSON.stringify({ ...parsed, resume_text: text.slice(0, 5000) }), {
@@ -91,30 +92,19 @@ Deno.serve(async (req: Request) => {
 
 async function extractPdfText(file: Blob): Promise<string> {
   try {
-    const pdfParse = (await import("npm:pdf-parse@1.1.1")).default;
+    const pdfParse = (await import("npm:pdf-parse@1.1.1/lib/pdf-parse.js")).default;
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const result = await pdfParse(buffer);
     return result.text || "";
-  } catch {
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
-    let text = "";
-    for (let i = 0; i < bytes.length; i++) {
-      const c = bytes[i];
-      if ((c >= 32 && c <= 126) || c === 10 || c === 13) {
-        text += String.fromCharCode(c);
-      }
-    }
-    return text;
-  }
+  } catch { return ""; }
 }
 
 async function extractDocxText(file: Blob): Promise<string> {
   try {
     const mammoth = await import("npm:mammoth@1.8.0");
     const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer });
+    const result = await mammoth.extractRawText({ buffer: Buffer.from(arrayBuffer) });
     return result.value || "";
   } catch {
     return "";

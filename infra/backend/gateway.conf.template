@@ -1,0 +1,45 @@
+map_hash_bucket_size 512;
+map $http_apikey $rhhub_api_key_valid {
+    default 0;
+    "${ANON_KEY}" 1;
+    "${SERVICE_ROLE_KEY}" 1;
+}
+limit_req_zone $binary_remote_addr zone=rhhub_auth:1m rate=5r/s;
+server {
+    listen 80;
+    server_name _;
+    client_max_body_size 25m;
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $auth auth:9999;
+    set $rest rest:3000;
+    set $storage storage:5000;
+    set $functions functions:9000;
+    location = /health { return 200 'ok'; }
+    location /auth/v1/ {
+        if ($rhhub_api_key_valid = 0) { return 401; }
+        limit_req zone=rhhub_auth burst=20 nodelay;
+        rewrite ^/auth/v1/(.*)$ /$1 break;
+        proxy_pass http://$auth;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location /rest/v1/ {
+        if ($rhhub_api_key_valid = 0) { return 401; }
+        rewrite ^/rest/v1/(.*)$ /$1 break;
+        proxy_pass http://$rest;
+        proxy_set_header Host $host;
+    }
+    location /storage/v1/ {
+        rewrite ^/storage/v1/(.*)$ /$1 break;
+        proxy_pass http://$storage;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+    location /functions/v1/ {
+        rewrite ^/functions/v1/(.*)$ /$1 break;
+        proxy_pass http://$functions;
+        proxy_read_timeout 95s;
+        proxy_set_header Host $host;
+    }
+    location / { return 404; }
+}
