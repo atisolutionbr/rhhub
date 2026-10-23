@@ -20,8 +20,8 @@ Exportação administrativa integral obtida por SQL, sem transferência Claim: 20 t
 
 PostgreSQL, Auth, REST, Storage e sete funções executam no projeto isolado rhhub-backend. Migrações 021 e 022 aplicadas no clone para proteção de privilégios, assinaturas e importadores. Doze verificações do banco passaram; envio e download privado, negação de acesso entre candidatos, cadastro e login por senha passaram em testes com dados temporários, removidos ao término.
 
-Frontend r3 publicado com botão Baixar currículo. Ainda aponta para o backend original: falta o conteúdo do único arquivo privado e a homologação final das funções antes da troca. A conta demo não é dona desse arquivo. Não desativar o original antes da conferência final.
+Frontend r4 publicado e conectado ao backend da VPS por HTTPS. Página inicial validada no navegador com 5.028 vagas e 15 empresas. Cadastro, login, upload/download, isolamento e processamento de texto e DOCX validados no backend próprio. Backup PostgreSQL pré-troca gerado e conferido. Falta o conteúdo do único currículo privado; a referência original foi preservada. A conta demo não é dona desse arquivo. Não desativar o original antes de recuperar esse binário.
 
 ## Limites da validação
 
-Cobrança PIX continua manual. SMTP de recuperação de senha e homologação completa de extração de PDF/DOCX e importadores ainda pendentes. Os testes de login com conta temporária da VPS não comprovam conhecimento da senha atual de uma conta original. Não declarar a migração concluída enquanto o frontend continuar no backend original.
+Cobrança PIX continua manual. SMTP de recuperação de senha, homologação de PDF e importadores ainda pendentes. Os testes de login com conta temporária da VPS não comprovam conhecimento da senha atual de uma conta original. Não declarar cópia integral de arquivos enquanto faltar o currículo original.
