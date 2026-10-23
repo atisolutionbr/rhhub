@@ -3,25 +3,20 @@
 Aplicação: https://rh.atisolution.com.br
 Repositório: https://github.com/atisolutionbr/rhhub
 
-## Revisão r2
+## Produção r4
 
-- Build TypeScript/Vite aprovado. React Router 7 e Vite 7, ferramentas e dependências corrigidas; npm install auditou 152 pacotes e informou zero vulnerabilidades conhecidas.
-- Nove testes automatizados aprovados: bloqueio de conteúdo privado sem perfil ou sem permissão, retorno seguro após login e regras de cache/offline.
-- Login trata falhas de rede, espera o perfil e retorna à página solicitada ou ao painel correspondente. Cadastro exige oito caracteres e não esconde falha de login posterior.
-- Cache offline restrito a conteúdo público; não intercepta login, painéis privados, APIs ou callbacks. Atualização de service worker sem cache permanente e limpeza restrita aos caches do próprio aplicativo.
-- Gráficos da empresa mostram visualizações por vaga e distribuição real de status; números fictícios removidos.
-- Pagamento: instrução manual por chave PIX, sem QR fictício nem promessa de ativação automática. Integração de cobrança automática não existe neste código.
-- Nginx: assets versionados com cache longo, HTML e service worker revalidados, gzip e bloqueio de arquivos ocultos.
-- Versões de produção geridas por compose.production.yaml, com imagem fixada por digest e logs limitados. Preservar a versão anterior para rollback.
+Frontend conectado ao backend da VPS por HTTPS em /backend. PostgreSQL, Auth, REST, Storage e sete funções executam no projeto isolado rhhub-backend. A página inicial carregou 5.028 vagas e 15 empresas no navegador.
 
-## Dados e backend da VPS
+Exportação administrativa por SQL sem transferência Claim: 20 tabelas, oito usuários Auth, oito identidades e metadados de um currículo privado. Dados restaurados e hashes de senha preservados. Backups integrais privados fora do Git; backup PostgreSQL pré-troca gerado e conferido.
 
-Exporta��o administrativa integral obtida por SQL, sem transfer�ncia Claim: 20 tabelas, 5.028 vagas, oito usu�rios Auth, oito identidades e metadados de um curr�culo privado. PostgreSQL restaurado na VPS; hashes de senha preservados. Backups integrais privados fora do Git.
+Migrações 021 e 022 aplicadas na VPS para proteger privilégios, assinaturas e importadores. Doze verificações do banco passaram. Cadastro, login por senha, upload/download privado, isolamento entre candidatos e extração de texto, PDF e DOCX passaram com dados temporários removidos ao final. Auth, PostgreSQL e Storage apresentam healthchecks saudáveis.
 
-PostgreSQL, Auth, REST, Storage e sete fun��es executam no projeto isolado rhhub-backend. Migra��es 021 e 022 aplicadas no clone para prote��o de privil�gios, assinaturas e importadores. Doze verifica��es do banco passaram; envio e download privado, nega��o de acesso entre candidatos, cadastro e login por senha passaram em testes com dados tempor�rios, removidos ao t�rmino.
+## Revisão da aplicação
 
-Frontend r4 publicado e conectado ao backend da VPS por HTTPS. P�gina inicial validada no navegador com 5.028 vagas e 15 empresas. Cadastro, login, upload/download, isolamento e processamento de texto e DOCX validados no backend pr�prio. Backup PostgreSQL pr�-troca gerado e conferido. Falta o conte�do do �nico curr�culo privado; a refer�ncia original foi preservada. A conta demo n�o � dona desse arquivo. N�o desativar o original antes de recuperar esse bin�rio.
+Build TypeScript/Vite aprovado; dependências atualizadas e nove testes de acesso/cache aprovados na revisão r2. Rotas privadas exigem perfil e papel correspondentes. Cache offline restrito a conteúdo público. Cadastro exige oito caracteres. Gráficos da empresa usam dados reais. Nginx protege arquivos ocultos e aplica cache adequado a HTML, service worker e assets versionados. Versões anteriores preservadas para rollback.
 
-## Limites da valida��o
+## Pendências
 
-Cobran�a PIX continua manual. SMTP de recupera��o de senha, homologa��o de PDF e importadores ainda pendentes. Os testes de login com conta tempor�ria da VPS n�o comprovam conhecimento da senha atual de uma conta original. N�o declarar c�pia integral de arquivos enquanto faltar o curr�culo original.
+Falta o binário de um currículo privado; a referência foi preservada. A conta demo não é dona desse arquivo. Preservar o backend original até recuperar o documento.
+
+As senhas originais foram preservadas; a migração não redefine uma senha esquecida. SMTP de recuperação de senha e homologação completa dos importadores ainda pendentes. Cobrança PIX continua manual, sem integração automática. A validação de cadastro/login com conta temporária não substitui a homologação real de todos os papéis e fluxos.
