@@ -1,15 +1,13 @@
 # Operação RHHub
 
-Projeto isolado do United e KartEnduro, em /opt/rhhub.
+Projeto isolado em /opt/rhhub. Frontend r4 conecta ao backend próprio por https://rh.atisolution.com.br/backend. Gateway local 127.0.0.1:18120; banco sem porta pública. Backend Compose rhhub-backend em /opt/rhhub/backend. Credenciais em .env.backend, fora do Git.
 
-A versão ativa é definida por RHHUB_RELEASE em /opt/rhhub/.deploy.env. Serviço rhhub-web, porta privada 127.0.0.1:18110, compose.production.yaml. Nginx do host e Certbot publicam HTTPS.
+Versão ativa definida por RHHUB_RELEASE em /opt/rhhub/.deploy.env. Frontend Compose rhhub, serviço rhhub-web, porta local 18110. Nginx do host e Certbot publicam HTTPS. Antes de atualizar, testar a versão em porta local temporária e preservar os assets anteriores.
 
-Antes de atualizar, preservar a versão ativa, suas configurações e assets. Testar a nova versão em uma porta local temporária; validar nginx -t, /health, rotas SPA, assets e HTTPS. Durante a troca, reter os assets com hash da versão anterior para clientes que ainda usam o HTML antigo.
+Rollback: restaurar RHHUB_RELEASE para o diretório anterior e executar docker compose --env-file /opt/rhhub/.deploy.env -p rhhub -f /opt/rhhub/compose.production.yaml up -d. O arquivo .deploy.env.before-r4 preserva a versão anterior, ainda conectada ao backend original. Não remover as versões nem o original enquanto houver o currículo pendente.
 
-Rollback: restaurar RHHUB_RELEASE para o diretório anterior e executar docker compose --env-file .deploy.env -p rhhub -f compose.production.yaml up -d. O primeiro deploy legado foi preservado como container rhhub-rollback-r1; só reativar depois de parar o container novo, para evitar colisão de porta.
+Exportação completa e SQL de restauração privados em /opt/rhhub/backup. Backups restritos ao root em /var/backups/rhhub/full, incluindo pre-cutover-postgres.sql.gz conferido. Nunca versionar .env, .private, dumps de usuários, senhas ou arquivos privados.
 
-Snapshots públicos em /var/backups/rhhub/public não substituem backup integral PostgreSQL/Auth/Storage. A exportação integral de tabelas e identidades foi preservada em /opt/rhhub/backup e /var/backups/rhhub/full, com acesso restrito ao root. Nunca versionar .env, .private, senhas, dump de usuários ou arquivos privados.
+Configuração em infra/backend. Após migrações do Auth, aplicar auth-claims.sql; após migrações do Storage, aplicar storage-policies.sql. roles.sql configura senhas internas e papéis necessários. Restaurar os dados com scripts/prepare-restore.py a partir das exportações privadas, sem executar seeds históricos. Aplicar migrações 021 e 022. Conferir com tests/backend-smoke.py no ambiente isolado antes de publicar. Healthcheck Storage usa 127.0.0.1 para evitar resolução IPv6.
 
-Backend isolado em /opt/rhhub/backend, projeto Compose rhhub-backend e gateway exclusivamente local em 127.0.0.1:18120. PostgreSQL, Auth, REST, Storage e funções executam na VPS. Configuração reproduzível em infra/backend; credenciais em .env.backend fora do Git. O frontend r3 ainda utiliza o backend original até concluir a cópia do único currículo e homologar a troca.
-
-Validado no clone: contagens das 20 tabelas, oito usuários e identidades, hashes de senha preservados, isolamento de perfis, bloqueio de promoção administrativa e alterações de assinatura, upload/download privado e isolamento entre candidatos. Cadastro e login por senha também passaram com conta temporária, removida ao término. O healthcheck de Storage deve usar IPv4 127.0.0.1, pois o serviço não escuta no IPv6 localhost.
+O único currículo original tem referência preservada, mas o binário continua pendente. SMTP de recuperação de senha, importadores e cobrança automática requerem configuração/homologação adicional. As senhas existentes não foram redefinidas.
