@@ -14,7 +14,7 @@ Candidato consulta e edita o próprio perfil, envia/baixa seu currículo, regist
 
 Empresa mantém seu cadastro, cria/edita/exclui suas vagas e gerencia o status das candidaturas recebidas. A consulta de nome, e-mail, telefone, título profissional e currículo exige uma candidatura a uma vaga dessa empresa. A nova função company_applicants não expõe candidatos sem essa relação. O banco impede autoverificação da empresa e alteração da identidade de uma candidatura.
 
-Admin consulta indicadores, modera vagas, altera o tipo de usuário, verifica empresas, gerencia fontes e consulta logs e planos. A seção Planos é de consulta; não existe editor de planos nesse painel. Fontes de Dados cadastra e ativa fontes; execução agendada dos importadores não está homologada. Pagamento PIX continua manual.
+Admin consulta indicadores, busca e pagina toda a base de vagas, modera vagas, altera o tipo de usuário, verifica empresas, gerencia fontes e consulta logs e planos. A gestão de vagas deixou de limitar a consulta às últimas 50. A seção Planos é de consulta; não existe editor de planos nesse painel. Fontes de Dados cadastra e ativa fontes; execução agendada dos importadores não está homologada. O indicador de fonte habilitada não representa execução do importador. Pagamento PIX continua manual.
 
 Rotas privadas exigem o papel correspondente. Banco e APIs também aplicam as restrições: candidato não cria empresa, não edita vaga e não se promove a admin; empresa não acessa alertas privados nem transfere candidaturas; usuários anônimos não consultam candidaturas. Admin possui gestão dos dados do sistema.
 

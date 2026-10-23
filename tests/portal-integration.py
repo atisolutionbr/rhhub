@@ -101,4 +101,3 @@ finally:
     print(json.dumps(checks, indent=2))
 
 raise SystemExit(0 if all(checks.values()) else 1)
-

@@ -171,11 +171,7 @@ function OverviewTab() {
       <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
         <div className="mb-4 flex items-center gap-2">
           <Cpu className="h-5 w-5 text-primary-400" />
-          <h2 className="text-lg font-semibold text-white">Painel de Crawling</h2>
-          <span className="ml-auto flex items-center gap-1.5 text-xs text-green-400">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
-            Sistema ativo
-          </span>
+          <h2 className="text-lg font-semibold text-white">Fontes de importação</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {crawlerStatus.map((crawler) => (
@@ -183,15 +179,15 @@ function OverviewTab() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Server className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                  <span className="text-sm font-medium text-slate-200">Crawler {crawler.name}</span>
+                  <span className="text-sm font-medium text-slate-200">{crawler.name}</span>
                 </div>
                 <span className={`flex items-center gap-1 text-xs font-medium ${
                   crawler.status === "online" ? "text-green-400" : "text-slate-500 dark:text-slate-400"
                 }`}>
                   <span className={`h-2 w-2 rounded-full ${
-                    crawler.status === "online" ? "animate-pulse bg-green-400" : "bg-slate-600"
+                    crawler.status === "online" ? "bg-green-400" : "bg-slate-600"
                   }`} />
-                  {crawler.status === "online" ? "Online" : "Offline"}
+                  {crawler.status === "online" ? "Habilitada" : "Desabilitada"}
                 </span>
               </div>
               <div className="mt-2 text-xs text-slate-400">
@@ -234,18 +230,31 @@ function JobsTab() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
+    let active = true;
+    setLoading(true);
+    setLoadError(null);
+    let query = supabase
       .from("jobs")
-      .select("*, company:companies(name)")
-      .order("created_at", { ascending: false })
-      .limit(50)
-      .then(({ data }) => {
+      .select("*, company:companies(name)", { count: "exact" })
+      .order("created_at", { ascending: false }).order("id");
+    if (filter !== "all") query = query.eq("status", filter);
+    if (search.trim()) query = query.ilike("title", `%${search.trim().replace(/[%_\\]/g, "")}%`);
+    query.range(page * 50, page * 50 + 49)
+      .then(({ data, count, error }) => {
+        if (!active) return;
+        if (error) setLoadError("Não foi possível carregar as vagas. Tente novamente.");
         setJobs((data as Job[]) || []);
+        setTotal(count || 0);
         setLoading(false);
       });
-  }, []);
+    return () => { active = false; };
+  }, [filter, search, page]);
 
   const filtered = filter === "all" ? jobs : jobs.filter((j) => j.status === filter);
 
@@ -260,19 +269,19 @@ function JobsTab() {
     const { error } = await supabase.from("jobs").delete().eq("id", id);
     if (error) { alert(`Erro: ${error.message}`); return; }
     setJobs((prev) => prev.filter((j) => j.id !== id));
+    setTotal(prev => Math.max(0, prev - 1));
   };
-
-  if (loading) return <div className="text-center py-8 text-slate-500 dark:text-slate-400">Carregando...</div>;
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Gerenciar Vagas</h1>
+      <input aria-label="Buscar vagas por título" type="search" className="input-field" placeholder="Buscar vagas por título" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
 
       <div className="flex gap-2">
         {["all", "published", "pending", "draft"].map((f) => (
           <button
             key={f}
-            onClick={() => setFilter(f)}
+            onClick={() => { setFilter(f); setPage(0); }}
             className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
               filter === f ? "bg-primary-600 text-white" : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800"
             }`}
@@ -283,7 +292,10 @@ function JobsTab() {
       </div>
 
       <div className="space-y-2">
-        {filtered.map((job) => (
+        {loading && <p role="status" className="py-4 text-slate-500">Carregando...</p>}
+        {loadError && <p role="alert" className="text-red-600">{loadError}</p>}
+        {!loading && !loadError && filtered.length === 0 && <p className="py-4 text-slate-500">Nenhuma vaga encontrada.</p>}
+        {!loading && filtered.map((job) => (
           <div key={job.id} className="card p-4">
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
@@ -313,6 +325,11 @@ function JobsTab() {
             </div>
           </div>
         ))}
+      </div>
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <button className="btn-secondary" disabled={loading || page === 0} onClick={() => setPage(p => p - 1)}>Anterior</button>
+        <span>Página {page + 1} de {Math.max(1, Math.ceil(total / 50))} · {total.toLocaleString("pt-BR")} vagas</span>
+        <button className="btn-secondary" disabled={loading || (page + 1) * 50 >= total} onClick={() => setPage(p => p + 1)}>Próxima</button>
       </div>
     </div>
   );
