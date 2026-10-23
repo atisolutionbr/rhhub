@@ -1,0 +1,48 @@
+{
+  "name": "Ati TechHub — Portal de Empregos em Tecnologia",
+  "short_name": "Ati TechHub",
+  "description": "Portal de empregos focado na área de tecnologia no Brasil. Encontre vagas de TI, compare salários e acelere sua carreira.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Buscar Vagas",
+      "short_name": "Vagas",
+      "url": "/vagas",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Benchmark de Salários",
+      "short_name": "Salários",
+      "url": "/salarios",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Rankings de Empresas",
+      "short_name": "Rankings",
+      "url": "/rankings",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
