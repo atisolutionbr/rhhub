@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import type { UserType } from "../lib/types";
+import { dashboardFor, safeReturnPath } from "../lib/authRouting";
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -13,6 +13,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate(safeReturnPath(location.state?.from, dashboardFor(profile?.user_type || "candidate")), { replace: true });
+    }
+  }, [user, profile, authLoading, location.state, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,9 +28,6 @@ export default function LoginPage() {
     setLoading(false);
     if (error) {
       setError(error);
-    } else {
-      const dest = location.state?.from || "/";
-      navigate(dest);
     }
   };
 

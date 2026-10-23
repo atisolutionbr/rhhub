@@ -142,18 +142,22 @@ function OverviewTab({ jobs, applications, company }: { jobs: Job[]; application
       }, 0) / acceptedWithDates.length)
     : 0;
 
-  // Candidate source breakdown (mock based on job sources)
-  const sources = [
-    { name: "Busca direta", pct: 45, color: "bg-blue-500" },
-    { name: "Ati Match", pct: 25, color: "bg-emerald-500" },
-    { name: "Alertas", pct: 18, color: "bg-amber-500" },
-    { name: "Indicação", pct: 12, color: "bg-purple-500" },
+  const statuses = [
+    { statuses: ["pending"], name: "Pendentes", color: "bg-blue-500" },
+    { statuses: ["reviewed", "shortlisted", "interview", "offer"], name: "Em processo seletivo", color: "bg-amber-500" },
+    { statuses: ["hired"], name: "Contratados", color: "bg-emerald-500" },
+    { statuses: ["rejected", "withdrawn"], name: "Encerradas", color: "bg-purple-500" },
   ];
+  const sources = statuses.map(item => ({ ...item,
+    pct: applications.length ? Math.round(100 * applications.filter(app => item.statuses.includes(app.status)).length / applications.length) : 0,
+  }));
+  const viewedJobs = [...jobs].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 6);
+  const maxViews = Math.max(1, ...viewedJobs.map(job => job.view_count || 0));
 
   const statCards = [
     { icon: Briefcase, label: "Vagas Ativas", value: publishedJobs.length, color: "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400" },
     { icon: Users, label: "Candidatos", value: applications.length, color: "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400" },
-    { icon: Clock, label: "Tempo médio (dias)", value: avgTimeToHire, color: "bg-amber-50 dark:bg-amber-950/30 text-amber-600" },
+    { icon: Clock, label: "Idade média das candidaturas contratadas (dias)", value: avgTimeToHire, color: "bg-amber-50 dark:bg-amber-950/30 text-amber-600" },
     { icon: TrendingUp, label: "Conversão", value: `${conversionRate}%`, color: "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400" },
   ];
 
@@ -183,21 +187,18 @@ function OverviewTab({ jobs, applications, company }: { jobs: Job[]; application
         {/* Views chart */}
         <div className="card p-6">
           <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Visualizações</h2>
-          <div className="flex items-end gap-2 h-40">
-            {[40, 65, 50, 80, 70, 90, 60, 85, 75, 95, 70, 100].map((h, i) => (
-              <div key={i} className="flex-1 rounded-t bg-primary-200 hover:bg-primary-400 transition-colors" style={{ height: `${h}%` }} />
-            ))}
-          </div>
-          <div className="mt-2 flex justify-between text-xs text-slate-400">
-            <span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span>
-            <span>Jul</span><span>Ago</span><span>Set</span><span>Out</span><span>Nov</span><span>Dez</span>
-          </div>
+          {viewedJobs.length ? <div className="space-y-3">
+            {viewedJobs.map(job => <div key={job.id}>
+              <div className="mb-1 flex justify-between gap-3 text-sm"><span className="truncate">{job.title}</span><span>{job.view_count || 0}</span></div>
+              <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-2 rounded-full bg-primary-500" style={{ width: `${100 * (job.view_count || 0) / maxViews}%` }} /></div>
+            </div>)}
+          </div> : <p className="text-sm text-slate-500">Publique uma vaga para acompanhar as visualizações.</p>}
           <div className="mt-3 text-sm text-slate-500 dark:text-slate-400">Total: {totalViews} visualizações</div>
         </div>
 
         {/* Candidate sources */}
         <div className="card p-6">
-          <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Origem dos candidatos</h2>
+          <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Status das candidaturas</h2>
           <div className="space-y-3">
             {sources.map((src) => (
               <div key={src.name}>

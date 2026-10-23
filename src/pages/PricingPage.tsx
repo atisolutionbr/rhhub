@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, Loader2, QrCode, Copy, CheckCircle2, X } from "lucide-react";
+import { Check, Loader2, Copy, CheckCircle2, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import type { SubscriptionPlan } from "../lib/types";
@@ -28,16 +28,14 @@ export default function PricingPage() {
       });
   }, []);
 
-  const generatePixPayload = (plan: SubscriptionPlan) => {
-    const amount = (plan.price_cents / 100).toFixed(2);
-    const payload = `00020126580014BR.GOV.BCB.PIX0136${PIX_KEY}5204000053039865802BR5913${PIX_MERCHANT}6009SAO PAULO62070503***6304${amount.replace(".", "")}`;
-    return payload;
-  };
-
-  const copyPixKey = () => {
-    navigator.clipboard.writeText(PIX_KEY);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const [copyError, setCopyError] = useState("");
+  const copyPixKey = async () => {
+    setCopyError("");
+    try {
+      await navigator.clipboard.writeText(PIX_KEY);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { setCopyError("Selecione e copie a chave PIX no campo abaixo."); }
   };
 
   if (loading) {
@@ -113,7 +111,7 @@ export default function PricingPage() {
             Pagamentos processados via PIX. Chave PIX: <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">{PIX_KEY}</span>
           </p>
           <p className="mt-1 text-xs text-slate-400">
-            Após o pagamento, seu plano será ativado automaticamente em até 24h.
+            A ativação do plano depende da confirmação do pagamento pela equipe Ati Solution.
           </p>
         </div>
       </div>
@@ -141,14 +139,9 @@ export default function PricingPage() {
               <div className="text-sm text-slate-500 dark:text-slate-400">por mês</div>
             </div>
 
-            {/* QR Code placeholder */}
-            <div className="mb-6 flex flex-col items-center">
-              <div className="flex h-48 w-48 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 dark:bg-slate-950">
-                <QrCode className="h-20 w-20 text-slate-300" />
-              </div>
-              <p className="mt-3 text-xs text-slate-400">Escaneie o QR Code com seu app de banco</p>
-            </div>
+            <p className="mb-6 text-sm text-slate-500 dark:text-slate-400">Use a chave PIX abaixo no aplicativo do seu banco. A confirmação e a ativação do plano são feitas pela equipe Ati Solution.</p>
 
+            {copyError && <p role="alert" className="mb-3 text-sm text-red-600">{copyError}</p>}
             {/* PIX Copy */}
             <div className="mb-4">
               <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Chave PIX (CNPJ)</label>
@@ -160,6 +153,7 @@ export default function PricingPage() {
                   className="input-field flex-1 font-mono"
                 />
                 <button
+                  aria-label="Copiar chave PIX"
                   onClick={copyPixKey}
                   className="btn-secondary flex-shrink-0"
                 >
@@ -183,7 +177,7 @@ export default function PricingPage() {
               onClick={() => setSelectedPlan(null)}
               className="btn-primary w-full"
             >
-              Já paguei
+              Fechar instruções
             </button>
           </div>
         </div>

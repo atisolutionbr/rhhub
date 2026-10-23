@@ -119,11 +119,11 @@ export default function SignupPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
-                  minLength={6}
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="input-field pl-10 pr-10"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres"
                 />
                 <button
                   type="button"

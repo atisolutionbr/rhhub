@@ -18,12 +18,19 @@ function isIOS(): boolean {
 }
 
 const DISMISS_KEY = "pwa-install-dismissed";
+const INSTALLED_KEY = "pwa-installed";
 const DISMISS_COOLDOWN = 1000 * 60 * 60 * 24; // 24h
 
 function shouldShowAfterDismiss(): boolean {
-  const ts = localStorage.getItem(DISMISS_KEY);
-  if (!ts) return true;
-  return Date.now() - parseInt(ts, 10) > DISMISS_COOLDOWN;
+  try {
+    if (localStorage.getItem(INSTALLED_KEY)) return false;
+    const ts = Number(localStorage.getItem(DISMISS_KEY));
+    return !ts || !Number.isFinite(ts) || Date.now() - ts > DISMISS_COOLDOWN;
+  } catch { return true; }
+}
+
+function remember(key: string, value: string) {
+  try { localStorage.setItem(key, value); } catch { /* Private browsing can block storage. */ }
 }
 
 export default function PWAInstallPrompt() {
@@ -35,7 +42,9 @@ export default function PWAInstallPrompt() {
   const deferredRef = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
     if (isStandalone()) {
+      remember(INSTALLED_KEY, "true");
       setInstalled(true);
       return;
     }
@@ -48,11 +57,13 @@ export default function PWAInstallPrompt() {
 
     const showWithDelay = () => {
       if (!shouldShowAfterDismiss()) return;
-      setTimeout(() => setShowModal(true), 1500);
+      timers.push(setTimeout(() => { if (!isStandalone() && shouldShowAfterDismiss()) setShowModal(true); }, 1500));
     };
 
     const deferredHandler = (e: Event) => {
       e.preventDefault();
+      // A fresh browser event also detects a previously removed installation.
+      try { localStorage.removeItem(INSTALLED_KEY); } catch { /* Storage unavailable. */ }
       deferredRef.current = e as BeforeInstallPromptEvent;
       setInstallPrompt(e as BeforeInstallPromptEvent);
       showWithDelay();
@@ -63,7 +74,9 @@ export default function PWAInstallPrompt() {
       setShowModal(false);
       setInstallPrompt(null);
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 4000);
+      remember(INSTALLED_KEY, "true");
+      timers.forEach(clearTimeout);
+      timers.push(setTimeout(() => setShowSuccess(false), 4000));
     };
 
     // If beforeinstallprompt already fired (some browsers fire before JS runs),
@@ -84,6 +97,7 @@ export default function PWAInstallPrompt() {
         }
       }, 4000);
       return () => {
+        timers.forEach(clearTimeout);
         clearTimeout(fallbackTimer);
         window.removeEventListener("beforeinstallprompt", deferredHandler);
         window.removeEventListener("appinstalled", installedHandler);
@@ -91,6 +105,7 @@ export default function PWAInstallPrompt() {
     }
 
     return () => {
+      timers.forEach(clearTimeout);
       window.removeEventListener("beforeinstallprompt", deferredHandler);
       window.removeEventListener("appinstalled", installedHandler);
     };
@@ -101,7 +116,7 @@ export default function PWAInstallPrompt() {
       await installPrompt.prompt();
       const choice = await installPrompt.userChoice;
       if (choice.outcome === "dismissed") {
-        localStorage.setItem(DISMISS_KEY, Date.now().toString());
+        remember(DISMISS_KEY, Date.now().toString());
       }
       setInstallPrompt(null);
       deferredRef.current = null;
@@ -110,11 +125,11 @@ export default function PWAInstallPrompt() {
   };
 
   const handleDismiss = () => {
-    localStorage.setItem(DISMISS_KEY, Date.now().toString());
+    remember(DISMISS_KEY, Date.now().toString());
     setShowModal(false);
   };
 
-  if (installed) return null;
+  if (installed && !showSuccess) return null;
 
   return (
     <>
@@ -135,6 +150,9 @@ export default function PWAInstallPrompt() {
           onClick={handleDismiss}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pwa-install-title"
             className="relative w-full max-w-sm rounded-t-2xl border border-slate-200 bg-white p-6 shadow-2xl animate-slide-up dark:border-slate-700 dark:bg-slate-900 sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -151,7 +169,7 @@ export default function PWAInstallPrompt() {
                 <img src="/icon-192.png" alt="Ati TechHub" className="h-16 w-16 rounded-xl" />
               </div>
 
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h2 id="pwa-install-title" className="text-xl font-bold text-slate-900 dark:text-white">
                 Instale o Ati TechHub
               </h2>
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -194,7 +212,7 @@ export default function PWAInstallPrompt() {
                   <p className="text-xs text-slate-400">
                     Abra o menu do navegador e toque em "Instalar app" ou "Adicionar à tela inicial".
                   </p>
-                ) : null}
+                ) : platform === "other" ? <p className="text-xs text-slate-400">Use o menu do navegador para instalar este site como aplicativo, quando disponível.</p> : null}
                 <button
                   onClick={handleDismiss}
                   className="w-full rounded-xl px-5 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
