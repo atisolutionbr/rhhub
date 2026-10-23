@@ -36,10 +36,12 @@ export default function CompanyDashboard() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
+      setLoadError(null);
       const { data: compData } = await supabase
         .from("companies")
         .select("*")
@@ -60,7 +62,12 @@ export default function CompanyDashboard() {
           .select("*, job:jobs(*)")
           .in("job_id", (jobsData as Job[])?.map((j) => j.id) || [])
           .order("created_at", { ascending: false });
-        setApplications((appsData as JobApplication[]) || []);
+        const { data: applicants, error: applicantError } = await supabase.rpc("company_applicants");
+        if (applicantError) setLoadError("Não foi possível carregar os dados dos candidatos. Atualize a página para tentar novamente.");
+        const byApplication = new Map((applicants || []).map((row: any) => [row.application_id, row]));
+        setApplications(((appsData as JobApplication[]) || []).map(app => ({
+          ...app, applicant: byApplication.get(app.id) as JobApplication["applicant"],
+        })));
       }
       setLoading(false);
     };
@@ -115,6 +122,7 @@ export default function CompanyDashboard() {
           </aside>
 
           <div className="flex-1">
+            {loadError && <p role="alert" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{loadError}</p>}
             {activeTab === "overview" && <OverviewTab jobs={jobs} applications={applications} company={company} />}
             {activeTab === "jobs" && <JobsTab jobs={jobs} company={company} setJobs={setJobs} />}
             {activeTab === "applications" && <ApplicationsTab applications={applications} setApplications={setApplications} />}
@@ -497,6 +505,24 @@ function JobsTab({ jobs, company, setJobs }: { jobs: Job[]; company: Company | n
 
 function ApplicationsTab({ applications, setApplications }: { applications: JobApplication[]; setApplications: React.Dispatch<React.SetStateAction<JobApplication[]>> }) {
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const downloadResume = async (app: JobApplication) => {
+    if (!app.applicant?.resume_url) return;
+    setDownloading(app.id);
+    setFeedback(null);
+    try {
+      const { data, error } = await supabase.storage.from("resumes").download(app.applicant.resume_url);
+      if (error || !data) throw new Error("download");
+      const url = URL.createObjectURL(data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = app.applicant.resume_url.split("/").pop() || "curriculo";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch { setFeedback("Não foi possível baixar o currículo. O arquivo pode estar indisponível."); }
+    finally { setDownloading(null); }
+  };
 
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("job_applications").update({ status }).eq("id", id);
@@ -528,6 +554,13 @@ function ApplicationsTab({ applications, setApplications }: { applications: JobA
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="font-semibold text-slate-900 dark:text-white">{app.job?.title}</div>
+                  <div className="mt-2 font-medium text-slate-900 dark:text-white">{app.applicant?.full_name || "Candidato"}</div>
+                  {app.applicant?.headline && <p className="text-sm text-slate-500">{app.applicant.headline}</p>}
+                  {app.applicant?.email && <a className="block text-sm text-primary-600" href={`mailto:${app.applicant.email}`}>{app.applicant.email}</a>}
+                  {app.applicant?.phone && <p className="text-sm text-slate-500">{app.applicant.phone}</p>}
+                  {app.applicant?.resume_url && <button type="button" className="btn-secondary mt-2 text-sm" disabled={downloading === app.id} onClick={() => downloadResume(app)}>
+                    {downloading === app.id ? "Baixando..." : "Baixar currículo"}
+                  </button>}
                   <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     Candidatura recebida em {formatDate(app.created_at)}
                   </div>

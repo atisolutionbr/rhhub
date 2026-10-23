@@ -113,6 +113,13 @@ export interface JobApplication {
   created_at: string;
   updated_at: string;
   job?: Job;
+  applicant?: {
+    full_name: string;
+    email: string;
+    phone: string | null;
+    headline: string | null;
+    resume_url: string | null;
+  };
 }
 
 export interface CandidateProfile {
