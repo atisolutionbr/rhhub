@@ -1,6 +1,6 @@
 # Operação RHHub — versão auditada em 24/10/2026
 
-Frontend r8 em /opt/rhhub/releases/20261024-r8. Projeto isolado em /opt/rhhub; HTTPS /backend aponta para gateway privado 127.0.0.1:18120. PostgreSQL não expõe porta pública. Backend Compose rhhub-backend, frontend Compose rhhub na porta privada 18110. Credenciais permanecem em .env.backend, fora do Git.
+Frontend r9 em /opt/rhhub/releases/20261024-r9. Projeto isolado em /opt/rhhub; HTTPS /backend aponta para gateway privado 127.0.0.1:18120. PostgreSQL não expõe porta pública. Backend Compose rhhub-backend, frontend Compose rhhub na porta privada 18110. Credenciais permanecem em .env.backend, fora do Git.
 
 RHHUB_RELEASE em /opt/rhhub/.deploy.env escolhe o frontend. Preservar as versões anteriores, testar a atualização em porta temporária e conferir nginx -t e /health. Não retornar a uma interface antiga que trate moeda estrangeira como BRL ou reexiba dados de demonstração.
 

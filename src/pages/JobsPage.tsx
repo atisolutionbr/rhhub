@@ -131,7 +131,7 @@ export default function JobsPage() {
         .from("live_jobs")
         .select("*, company:companies(*)", { count: "exact" })
         .eq("status", "published").eq("data_verified", true)
-        .order("created_at", { ascending: false });
+        .order("published_at", { ascending: false, nullsFirst: false }).order("id");
 
       if (q) { const term = q.replace(/[,()%]/g, " ").trim(); query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%`); }
       if (loc) {

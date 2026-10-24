@@ -3,6 +3,7 @@ import json
 import subprocess
 import urllib.request
 import urllib.error
+import urllib.parse
 from pathlib import Path
 
 env = dict(line.split('=',1) for line in Path('/opt/rhhub/backend/.env.backend').read_text().splitlines() if '=' in line)
@@ -27,6 +28,13 @@ checks['fake_company_rankings_not_public']=api('rest/v1/company_rankings?select=
 status,summary=api('rest/v1/rpc/portal_market_summary')
 checks['public_summary_matches_entire_database']=status==200 and summary['total']==int(sql('SELECT count(*) FROM live_jobs'))
 checks['public_company_relationship_works']=api('rest/v1/live_jobs?select=id,company:companies(name)&limit=1')[0]==200
+query=urllib.parse.urlencode({'select':'id','limit':'1','or':'(title.ilike.%Python%,description.ilike.%Python%)'})
+checks['full_text_keyword_search_works']=api('rest/v1/live_jobs?'+query)[0]==200
+query=urllib.parse.urlencode({'select':'id','limit':'1','or':'(location_country.eq.BR,location_restrictions.cs.{Brazil},location_restrictions.eq.{})'})
+checks['brazil_eligibility_filter_works']=api('rest/v1/live_jobs?'+query)[0]==200
+first=api('rest/v1/live_jobs?select=id&limit=12&offset=0&order=published_at.desc.nullslast,id.asc')
+second=api('rest/v1/live_jobs?select=id&limit=12&offset=12&order=published_at.desc.nullslast,id.asc')
+checks['stable_pagination_has_no_overlap']=first[0]==second[0]==200 and not ({r['id'] for r in first[1]} & {r['id'] for r in second[1]})
 checks['no_paid_demo_plan_published']=api('rest/v1/subscription_plans?is_free=eq.false&select=id')==(200,[])
 for name in ['scrape-tech-jobs','scrape-trabalhaes','rss-fetch','csv-import','webhook-receiver']:
     checks['retired_'+name]=api('functions/v1/'+name)[0]==410

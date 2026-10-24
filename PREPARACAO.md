@@ -3,7 +3,7 @@
 Aplicação: https://rh.atisolution.com.br
 Repositório: https://github.com/atisolutionbr/rhhub
 
-Versão r8 conectada ao PostgreSQL da VPS. Catálogo público inicial: 1.285 anúncios com origem identificada — 1.158 Himalayas, 125 CI&T/Lever e dois Remotive. Valores, moeda, período, localizações e links preservam as condições da fonte. A coleta inicial da Himalayas foi parcial por HTTP 429, com retomada e limites configurados. Não há conexão alegada a portais privados sem acesso real.
+Versão r9 conectada ao PostgreSQL da VPS. Catálogo público após retomada: 3.271 anúncios com origem identificada — 3.144 Himalayas, 125 CI&T/Lever e dois Remotive. Valores, moeda, período, localizações e links preservam as condições da fonte. A coleta inicial da Himalayas foi parcial por HTTP 429, e foi retomada até concluir, com limites e checkpoint configurados. Não há conexão alegada a portais privados sem acesso real.
 
 Os 5.028 anúncios antigos foram preservados em quarentena, incluindo 5.000 gerados por migração de demonstração. Referências salariais, rankings e cadastros sem evidência não participam das páginas públicas. As contas e os vínculos existentes foram preservados.
 

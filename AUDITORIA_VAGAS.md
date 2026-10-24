@@ -29,7 +29,11 @@ Páginas públicas continham números comerciais, vagas internas de demonstraç�
 
 Total inicial: **1.285 anúncios**, não uma garantia de 1.285 posições distintas entre todos os portais. A deduplicação é feita pelo identificador de cada fonte. São 143 anúncios com valores salariais numéricos na primeira coleta; moeda e período variam.
 
-A Himalayas respondeu HTTP 429 após a página 108. A execução foi registrada como parcial. A retomada usa a página 109, espera e checkpoint; não tenta contornar o limite. A sondagem do mural Nubank/Greenhouse retornou lista vazia e não foi apresentada como conexão com vagas disponíveis. LinkedIn, Catho, Indeed, InfoJobs, Gupy e TheirStack não foram apresentados como conectados sem acesso real.
+### Resultado após retomada do serviço
+
+Às 08:48 de 24/10/2026 (Brasília), o serviço systemd terminou com sucesso e concluiu a varredura paginada da Himalayas. O catálogo chegou a **3.271 anúncios**: 3.144 Himalayas, 125 CI&T/Lever e dois Remotive. A segunda etapa examinou 3.947 registros da fonte, inseriu 1.986 anúncios técnicos e atualizou três já conhecidos. Os números variam com novas publicações e encerramentos; não são um total fixo prometido pelo portal.
+
+A Himalayas respondeu HTTP 429 após a página 108. A execução inicial foi registrada como parcial; após a espera, retomou da página 109 e concluiu a varredura. Novas execuções seguem checkpoint e cooldown, sem contornar limites. A sondagem do mural Nubank/Greenhouse retornou lista vazia e não foi apresentada como conexão com vagas disponíveis. LinkedIn, Catho, Indeed, InfoJobs, Gupy e TheirStack não foram apresentados como conectados sem acesso real.
 
 ## Operação e limites
 

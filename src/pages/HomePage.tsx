@@ -91,7 +91,7 @@ export default function HomePage() {
           .select("*, company:companies(*)")
           .eq("status", "published")
           .eq("data_verified", true)
-          .order("created_at", { ascending: false })
+          .order("published_at", { ascending: false, nullsFirst: false }).order("id")
           .limit(6),
         supabase.from("categories").select("*").order("sort_order"),
         supabase
