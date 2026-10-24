@@ -1,9 +1,9 @@
 [Unit]
-Description=Check public feed refresh and deferred pagination hourly
+Description=Check configured public feed intervals every five minutes
 
 [Timer]
-OnCalendar=*-*-* *:15:00 America/Sao_Paulo
-RandomizedDelaySec=180
+OnCalendar=*-*-* *:00/5:00 America/Sao_Paulo
+AccuracySec=30
 Persistent=true
 Unit=rhhub-sync.service
 

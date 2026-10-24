@@ -155,8 +155,18 @@ def normalize(raw, provider, checked):
 
 def source(name, url):
     rows = api('job_sources?name=eq.' + urllib.parse.quote(name))
-    if rows: return rows[0]['id'] if rows[0]['is_active'] else None
-    return api('job_sources', 'POST', {'name': name, 'url': url, 'source_type': 'api', 'is_active': True})[0]['id']
+    if rows: return rows[0] if rows[0]['is_active'] else None
+    return api('job_sources', 'POST', {'name': name, 'url': url, 'source_type': 'api', 'is_active': True, 'sync_interval_minutes': 120})[0]
+
+
+def next_due(checkpoint, source_row):
+    # Resume incomplete scans independently of the regular interval; never bypass a 429.
+    if checkpoint.get('cycle_started'):
+        return checkpoint.get('not_before', 0)
+    completed = checkpoint.get('completed_at') or source_row.get('last_synced_at')
+    if not completed: return 0
+    stamp = datetime.fromisoformat(completed.replace('Z', '+00:00')).timestamp()
+    return stamp + int(source_row.get('sync_interval_minutes') or 120) * 60
 
 def main(max_pages=400, stage=False, only=None):
     ENV.update(dict(line.split('=', 1) for line in (ROOT / 'backend/.env.backend').read_text().splitlines() if '=' in line))
@@ -174,13 +184,15 @@ def main(max_pages=400, stage=False, only=None):
     # Only these documented sources are enabled. Legacy arbitrary scrapers stay disabled.
     for provider, root in [('Himalayas', 'https://himalayas.app/jobs/api/search?country=Brazil&sort=recent'), ('Remotive', 'https://remotive.com/api/remote-jobs'), ('CI&T (Lever)', 'https://api.lever.co/v0/postings/ciandt?mode=json')]:
         if only and only != provider: continue
-        sid = source(provider, root)
-        if sid is None:
+        source_row = source(provider, root)
+        if source_row is None:
             stats.append(dict(source=provider, complete=False, examined=0, imported=0, error=None, disabled=True))
             continue
+        sid = source_row['id']
         checkpoint = state.get(provider, {})
-        if checkpoint.get('not_before', 0) > time.time():
-            stats.append(dict(source=provider, complete=False, examined=0, imported=0, error=None, deferred_until=checkpoint['not_before']))
+        due = next_due(checkpoint, source_row)
+        if due > time.time():
+            stats.append(dict(source=provider, complete=False, examined=0, imported=0, error=None, deferred_until=due))
             continue
         cycle_started = checkpoint.get('cycle_started', started)
         first_page = checkpoint.get('next_page', 1) if provider == 'Himalayas' else 1
@@ -233,7 +245,7 @@ def main(max_pages=400, stage=False, only=None):
                 time.sleep(1.2)
             if complete:
                 api('jobs?source_id=eq.' + sid + '&data_verified=eq.true&last_checked_at=lt.' + urllib.parse.quote(cycle_started), 'PATCH', {'status': 'expired', 'data_verified': False})
-                state[provider] = {'next_page': 1, 'not_before': time.time() + 43200}
+                state[provider] = {'next_page': 1, 'completed_at': NOW()}
                 save_state()
         except SourceRateLimit as exc:
             error = str(exc)

@@ -509,6 +509,21 @@ function SourcesTab() {
     setSources((prev) => prev.filter((s) => s.id !== id));
   };
 
+  const [savingInterval, setSavingInterval] = useState<string | null>(null);
+  const [intervalMessage, setIntervalMessage] = useState("");
+  const saveInterval = async (e: React.FormEvent<HTMLFormElement>, id: string) => {
+    e.preventDefault();
+    const minutes = Math.round(Number(new FormData(e.currentTarget).get("hours")) * 60);
+    if (!Number.isInteger(minutes) || minutes < 15 || minutes > 10080) return;
+    setSavingInterval(id);
+    setIntervalMessage("");
+    const { error } = await supabase.from("job_sources").update({ sync_interval_minutes: minutes }).eq("id", id);
+    setSavingInterval(null);
+    if (error) { setIntervalMessage(`Erro ao salvar: ${error.message}`); return; }
+    setSources((prev) => prev.map((s) => s.id === id ? { ...s, sync_interval_minutes: minutes } : s));
+    setIntervalMessage("Intervalo salvo. A programação será aplicada na próxima verificação.");
+  };
+
   if (loading) return <div className="text-center py-8 text-slate-500 dark:text-slate-400">Carregando...</div>;
 
   return (
@@ -547,6 +562,9 @@ function SourcesTab() {
         </form>
       )}
 
+      <p className="text-sm text-slate-500">Configure o intervalo de cada fonte em horas (padrão: 2h). O agendador verifica a programação a cada 5 minutos. Fontes inativas não são consultadas; limites da API podem adiar uma coleta. Somente Himalayas, Remotive e CI&amp;T (Lever) possuem integração automática instalada.</p>
+      {intervalMessage && <p role="status" className="text-sm">{intervalMessage}</p>}
+
       <div className="space-y-3">
         {sources.map((s) => (
           <div key={s.id} className="card p-4">
@@ -567,6 +585,14 @@ function SourcesTab() {
                     {s.url} <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
+                <form onSubmit={(e) => saveInterval(e, s.id)} className="mt-3 flex flex-wrap items-end gap-2">
+                  <label className="text-sm">
+                    Intervalo entre buscas (horas)
+                    <input name="hours" type="number" min="0.25" max="168" step="0.25" required defaultValue={(s.sync_interval_minutes || 120) / 60} className="input-field mt-1 w-28" />
+                  </label>
+                  <button type="submit" disabled={savingInterval === s.id} className="btn-primary">{savingInterval === s.id ? "Salvando..." : "Salvar intervalo"}</button>
+                  <span className="text-xs text-slate-500">Última tentativa: {s.last_synced_at ? new Date(s.last_synced_at).toLocaleString("pt-BR") : "Ainda não executada"}</span>
+                </form>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => toggleActive(s.id, s.is_active)} className="text-slate-400 hover:text-primary-600 dark:text-primary-400">

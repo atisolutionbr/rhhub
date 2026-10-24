@@ -67,4 +67,18 @@ class SourceTruthTests(unittest.TestCase):
         self.assertIsNone(row['employment_type'])
         self.assertIsNone(row['salary_min'])
 
+class ScheduleTests(unittest.TestCase):
+    def test_interval_change_recomputes_due_and_migrates_old_cooldown(self):
+        row = {'last_synced_at': '2026-10-24T12:00:00+00:00', 'sync_interval_minutes': 120}
+        due = module.datetime.fromisoformat('2026-10-24T14:00:00+00:00').timestamp()
+        self.assertEqual(module.next_due({'next_page': 1, 'not_before': due + 36000}, row), due)
+        row['sync_interval_minutes'] = 60
+        self.assertEqual(module.next_due({'completed_at': row['last_synced_at']}, row), due - 3600)
+
+    def test_rate_limit_and_partial_checkpoint_override_regular_schedule(self):
+        row = {'sync_interval_minutes': 120}
+        self.assertEqual(module.next_due({'cycle_started': 'start', 'not_before': 999}, row), 999)
+        self.assertEqual(module.next_due({'cycle_started': 'start', 'next_page': 30}, row), 0)
+        self.assertEqual(module.next_due({}, row), 0)
+
 if __name__=='__main__': unittest.main()

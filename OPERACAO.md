@@ -6,7 +6,7 @@ RHHUB_RELEASE em /opt/rhhub/.deploy.env escolhe o frontend. Preservar as versõe
 
 ## Coleta
 
-Script /opt/rhhub/ingestion/sync_verified_jobs.py. rhhub-sync.timer verifica a fila a cada hora. Coletas completas de uma fonte têm intervalo mínimo de 12 horas; etapas interrompidas retomam depois do cooldown. HTTP 429 respeita Retry-After ou espera conservadora de 15 minutos. O checkpoint em /opt/rhhub/backup/verified-feeds/state.json contém próxima página, início do ciclo e horário mínimo. Não remover o checkpoint para contornar limites.
+Script /opt/rhhub/ingestion/sync_verified_jobs.py. rhhub-sync.timer verifica a fila a cada 5 minutos. Coletas completas seguem sync_interval_minutes, configurável em Admin > Fontes de Dados (padrão 120 minutos); etapas interrompidas retomam depois do cooldown. HTTP 429 respeita Retry-After ou espera conservadora de 15 minutos. O checkpoint em /opt/rhhub/backup/verified-feeds/state.json contém próxima página, início do ciclo e horário mínimo de retomada e conclusão da última coleta completa. Não remover o checkpoint para contornar limites.
 
 Consultar systemctl status rhhub-sync.timer e journalctl -u rhhub-sync.service. A ativação de uma fonte adicional no painel não implementa seu coletor: o serviço suporta as três fontes documentadas. Snapshots e relatórios ficam em /opt/rhhub/backup/verified-feeds, restritos ao root.
 

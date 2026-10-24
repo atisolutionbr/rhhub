@@ -37,7 +37,7 @@ A Himalayas respondeu HTTP 429 após a página 108. A execução inicial foi reg
 
 ## Operação e limites
 
-`rhhub-sync.timer` verifica a fila a cada hora. Uma coleta completa de uma fonte tem intervalo mínimo de 12 horas; varreduras interrompidas retomam após o prazo de espera. HTTP 429 respeita `Retry-After` ou uma espera conservadora de 15 minutos. Erros não são convertidos em sucesso ou em listas vazias. Anúncios ausentes são expirados somente depois de uma varredura completa da fonte.
+`rhhub-sync.timer` verifica a fila a cada 5 minutos. O intervalo por fonte é configurável em Admin > Fontes de Dados, com padrão de 2 horas; varreduras interrompidas retomam após o prazo de espera. HTTP 429 respeita `Retry-After` ou uma espera conservadora de 15 minutos. Erros não são convertidos em sucesso ou em listas vazias. Anúncios ausentes são expirados somente depois de uma varredura completa da fonte.
 
 Categorias e tecnologias são organização derivada de termos presentes no anúncio, não requisitos acrescentados pelo portal. Campos originais ficam preservados no payload. Fontes podem mudar o anúncio, encerrar a vaga ou alterar suas APIs; consulte sempre a origem antes de candidatar-se. Não há garantia honesta de disponibilidade permanente de 100% das vagas de sites terceiros.
 
