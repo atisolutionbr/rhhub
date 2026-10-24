@@ -10,6 +10,7 @@ Deno.serve(async req => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   const name = new URL(req.url).pathname.split("/")[1];
   if (!functions.has(name)) return reply(404, "Função não encontrada.");
+  if (["scrape-tech-jobs", "scrape-trabalhaes", "rss-fetch", "csv-import", "webhook-receiver"].includes(name)) return reply(410, "Importador legado desativado. A coleta usa somente fontes públicas documentadas pelo serviço rhhub-sync.");
   if (!["GET", "POST"].includes(req.method)) return reply(405, "Método não permitido.");
   if (name === "webhook-receiver") {
     const secret = Deno.env.get("WEBHOOK_TOKEN");

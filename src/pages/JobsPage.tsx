@@ -128,36 +128,21 @@ export default function JobsPage() {
     const fetchJobs = async () => {
       setLoading(true);
       let query = supabase
-        .from("jobs")
+        .from("live_jobs")
         .select("*, company:companies(*)", { count: "exact" })
-        .eq("status", "published")
+        .eq("status", "published").eq("data_verified", true)
         .order("created_at", { ascending: false });
 
-      if (q) query = query.ilike("title", `%${q}%`);
+      if (q) { const term = q.replace(/[,()%]/g, " ").trim(); query = query.or(`title.ilike.%${term}%,description.ilike.%${term}%`); }
       if (loc) {
         const [cityPart] = loc.split(",");
-        query = query.or(`location_city.ilike.%${cityPart.trim()}%,location_state.ilike.%${cityPart.trim()}%`);
+        if (["br", "brasil", "brazil"].includes(cityPart.trim().toLowerCase())) query = query.or("location_country.eq.BR,location_restrictions.cs.{Brazil},location_restrictions.eq.{}");
+        else { const place = cityPart.trim().replace(/[,()%]/g, " "); query = query.or(`location_city.ilike.%${place}%,location_state.ilike.%${place}%,source_location_text.ilike.%${place}%`); }
       }
-      if (cat) query = query.eq("category.slug", cat);
+      if (cat) { const category = categories.find(item => item.slug === cat); if (category) query = query.eq("category_id", category.id); }
       if (modality) query = query.eq("modality", modality);
       if (seniority) query = query.eq("seniority", seniority);
       if (tech) query = query.contains("technologies", [tech]);
-
-      // Filter to only IT/tech jobs
-      const techFilter = [
-        "desenvolvedor", "developer", "engenheiro", "engineer", "programador",
-        "frontend", "backend", "fullstack", "full stack", "full-stack",
-        "devops", "sre", "data scientist", "data engineer", "data analyst",
-        "cientista de dados", "machine learning", "mobile", "android", "ios",
-        "tech lead", "arquiteto", "architect", "qa", "quality assurance",
-        "security", "segurança", "cloud", "aws", "azure",
-        "python", "java", "javascript", "typescript", "react", "node",
-        "go", "rust", "ruby", "php", "c#", ".net", "kotlin", "swift",
-        "scrum master", "product owner", "product manager",
-        "ux", "ui", "designer", "analista de sistemas", "analista de ti",
-        "suporte técnico", "sysadmin", "dba", "sql", "infraestrutura",
-      ].map((kw) => `title.ilike.%${kw}%`).join(",");
-      query = query.or(techFilter);
 
       query = query.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
@@ -167,7 +152,7 @@ export default function JobsPage() {
       setLoading(false);
     };
     fetchJobs();
-  }, [q, loc, cat, modality, seniority, tech, page]);
+  }, [q, loc, cat, modality, seniority, tech, page, categories]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -422,7 +407,7 @@ export default function JobsPage() {
                             )}
                           </div>
                           <div className="text-sm text-slate-500 dark:text-slate-400">
-                            {job.company?.name} · {job.location_city || "Brasil"}
+                            {job.company?.name} · {job.source_location_text || job.location_city || job.location_country || "Consulte as restrições na fonte"}
                             {job.location_state ? `, ${job.location_state}` : ""}
                           </div>
                           <div className="mt-2 flex flex-wrap gap-2">
@@ -446,7 +431,7 @@ export default function JobsPage() {
                       <div className="flex items-center gap-4 sm:flex-col sm:items-end">
                         <div className="text-right">
                           <div className="font-semibold text-slate-900 dark:text-white">
-                            {formatSalary(job.salary_min, job.salary_max, job.salary_period)}
+                            {job.salary_text || formatSalary(job.salary_min, job.salary_max, job.salary_period, job.salary_currency)}
                           </div>
                           <div className="text-xs text-slate-400">{timeAgo(job.created_at)}</div>
                         </div>

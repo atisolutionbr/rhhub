@@ -314,8 +314,8 @@ function JobsTab({ jobs, company, setJobs }: { jobs: Job[]; company: Company | n
       employment_type: form.employment_type,
       is_internal: true,
       technologies: form.technologies.split(",").map((s) => s.trim()).filter(Boolean),
-      status: "published",
-      published_at: new Date().toISOString(),
+      status: "pending",
+      published_at: null,
     };
 
     setSubmitting(true);
@@ -338,7 +338,7 @@ function JobsTab({ jobs, company, setJobs }: { jobs: Job[]; company: Company | n
         setFeedback({ type: "error", message: `Erro ao publicar vaga: ${error.message}` });
       } else if (data) {
         setJobs((prev) => [data as Job, ...prev]);
-        setFeedback({ type: "success", message: "Vaga publicada com sucesso!" });
+        setFeedback({ type: "success", message: "Vaga enviada para revisão administrativa." });
         setShowForm(false);
         setForm({ title: "", description: "", requirements: "", benefits: "", salary_min: "", salary_max: "", location_city: "", modality: "remote", seniority: "mid", employment_type: "clt", technologies: "" });
       }
@@ -450,7 +450,7 @@ function JobsTab({ jobs, company, setJobs }: { jobs: Job[]; company: Company | n
             <textarea value={form.benefits} onChange={(e) => setForm({ ...form, benefits: e.target.value })} rows={3} className="input-field" />
           </div>
           <div className="flex gap-3">
-            <button type="submit" disabled={submitting} className="btn-primary"><Save className="h-4 w-4" /> {submitting ? "Salvando..." : editingJob ? "Atualizar" : "Publicar"} vaga</button>
+            <button type="submit" disabled={submitting} className="btn-primary"><Save className="h-4 w-4" /> {submitting ? "Salvando..." : editingJob ? "Atualizar" : "Enviar para revisão"} vaga</button>
             <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancelar</button>
           </div>
         </form>
@@ -477,7 +477,7 @@ function JobsTab({ jobs, company, setJobs }: { jobs: Job[]; company: Company | n
                     <span>·</span>
                     <span>{employmentLabel(job.employment_type)}</span>
                     <span>·</span>
-                    <span>{formatSalary(job.salary_min, job.salary_max, job.salary_period)}</span>
+                    <span>{formatSalary(job.salary_min, job.salary_max, job.salary_period, job.salary_currency)}</span>
                   </div>
                   <div className="mt-1 text-xs text-slate-400">
                     {job.application_count || 0} candidaturas · {job.view_count || 0} visualizações · {timeAgo(job.created_at)}

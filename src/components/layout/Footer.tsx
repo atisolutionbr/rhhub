@@ -11,8 +11,8 @@ export default function Footer() {
               <img src="/Logo_Portal_sem_fundo.png" alt="Ati TechHub" className="h-9 w-auto" />
             </Link>
             <p className="mt-4 text-sm leading-relaxed">
-              O maior hub de vagas de tecnologia do Brasil. Unificamos todas as
-              vagas de TI em um só lugar.
+              Portal de vagas de tecnologia com origem identificada e acesso
+              aos anúncios nas fontes.
             </p>
           </div>
 
@@ -38,21 +38,15 @@ export default function Footer() {
           </div>
 
           <div>
-            <h3 className="mb-4 text-sm font-semibold text-white">Contato</h3>
+            <h3 className="mb-4 text-sm font-semibold text-white">Projeto</h3>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4" /> contato@atitechub.com.br
+                <Github className="h-4 w-4" /> <a href="https://github.com/atisolutionbr/rhhub" target="_blank" rel="noopener noreferrer">RHHub · AtiSolution</a>
               </li>
             </ul>
             <div className="mt-4 flex gap-3">
-              <a href="#" className="rounded-lg bg-slate-800 p-2 hover:bg-slate-700 transition-colors" aria-label="LinkedIn">
-                <Linkedin className="h-4 w-4" />
-              </a>
-              <a href="#" className="rounded-lg bg-slate-800 p-2 hover:bg-slate-700 transition-colors" aria-label="GitHub">
+              <a href="https://github.com/atisolutionbr/rhhub" target="_blank" rel="noopener noreferrer" className="rounded-lg bg-slate-800 p-2 hover:bg-slate-700 transition-colors" aria-label="GitHub">
                 <Github className="h-4 w-4" />
-              </a>
-              <a href="#" className="rounded-lg bg-slate-800 p-2 hover:bg-slate-700 transition-colors" aria-label="Twitter">
-                <Twitter className="h-4 w-4" />
               </a>
             </div>
           </div>

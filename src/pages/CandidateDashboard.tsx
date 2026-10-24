@@ -413,7 +413,7 @@ function FavoritesTab() {
               <Link to={`/vagas/${fav.job_id}`} className="min-w-0 flex-1">
                 <div className="font-semibold text-slate-900 dark:text-white hover:text-primary-700">{fav.job?.title}</div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">
-                  {fav.job?.location_city || "Brasil"} · {formatSalary(fav.job?.salary_min, fav.job?.salary_max, fav.job?.salary_period)}
+                  {fav.job?.location_city || "Brasil"} · {formatSalary(fav.job?.salary_min, fav.job?.salary_max, fav.job?.salary_period, fav.job?.salary_currency)}
                 </div>
               </Link>
               <button onClick={() => removeFav(fav.id)} className="ml-3 text-slate-300 hover:text-red-500">

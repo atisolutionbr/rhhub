@@ -80,6 +80,15 @@ export interface Job {
   created_at: string;
   updated_at: string;
   source_id: string | null;
+  data_verified?: boolean;
+  source_url?: string | null;
+  last_checked_at?: string | null;
+  source_expires_at?: string | null;
+  salary_text?: string | null;
+  location_restrictions?: string[] | null;
+  timezone_restrictions?: string[] | null;
+  employment_type_text?: string | null;
+  source_location_text?: string | null;
   company?: Company;
   category?: Category;
 }

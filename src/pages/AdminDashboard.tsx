@@ -149,7 +149,7 @@ function OverviewTab() {
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { icon: Briefcase, label: "Total de Vagas", value: stats.jobs, color: "text-blue-400" },
+          { icon: Briefcase, label: "Registros, incluindo quarentena", value: stats.jobs, color: "text-blue-400" },
           { icon: CheckCircle2, label: "Publicadas", value: stats.published, color: "text-green-400" },
           { icon: Users, label: "Usuários", value: stats.users, color: "text-cyan-400" },
           { icon: Building2, label: "Empresas", value: stats.companies, color: "text-amber-400" },
@@ -300,6 +300,7 @@ function JobsTab() {
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
                 <div className="font-semibold text-slate-900 dark:text-white">{job.title}</div>
+                {!job.data_verified && <p className="mt-1 text-xs text-amber-700">Registro não verificado: fora da busca pública.</p>}
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   {job.company?.name || "—"} · {seniorityLabel(job.seniority)} · {modalityLabel(job.modality)} · {timeAgo(job.created_at)}
                 </div>
@@ -559,7 +560,7 @@ function SourcesTab() {
                   </span>
                 </div>
                 <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Tipo: {s.source_type} · Vagas encontradas: {s.jobs_found_total} · Importadas: {s.jobs_imported_total}
+                  Tipo: {s.source_type} · Examinadas na última coleta: {s.jobs_found_total} · Gravadas na última coleta: {s.jobs_imported_total}
                 </div>
                 {s.url && (
                   <a href={s.url} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:underline">
@@ -648,7 +649,7 @@ function PlansTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("subscription_plans").select("*").order("sort_order").then(({ data }) => {
+    supabase.from("subscription_plans").select("*").eq("is_active", true).order("sort_order").then(({ data }) => {
       setPlans((data as SubscriptionPlan[]) || []);
       setLoading(false);
     });
@@ -658,7 +659,8 @@ function PlansTab() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Planos de Assinatura</h1>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Configuração de acesso</h1>
+      <p className="text-sm text-slate-500">Somente o acesso gratuito está disponível. Cobranças e limites comerciais não estão ativos.</p>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {plans.map((plan) => (
           <div key={plan.id} className="card p-5">
@@ -671,7 +673,7 @@ function PlansTab() {
               <span className="text-sm font-normal text-slate-500 dark:text-slate-400">/mês</span>
             </div>
             <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              {plan.max_applications_per_day} candidaturas/dia
+              Acesso gratuito aos recursos publicados
             </div>
             <ul className="mt-3 space-y-1">
               {plan.features?.map((f, i) => (

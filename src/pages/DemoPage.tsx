@@ -3,7 +3,7 @@ import { Play, ArrowRight, Briefcase, Search, User, Building2, TrendingUp } from
 
 export default function DemoPage() {
   const steps = [
-    { icon: Search, title: "Buscar vagas", desc: "Pesquise entre mais de 5.000 vagas de tecnologia unificadas de vários portais." },
+    { icon: Search, title: "Buscar vagas", desc: "Pesquise vagas de tecnologia com fonte e data de conferência identificadas." },
     { icon: User, title: "Criar perfil", desc: "Monte seu perfil de candidato com informações profissionais e preferências." },
     { icon: Briefcase, title: "Se candidatar", desc: "Candidate-se às vagas com um clique e acompanhe o status das candidaturas." },
     { icon: Building2, title: "Publicar vagas", desc: "Empresas podem publicar vagas diretamente e gerenciar candidatos." },

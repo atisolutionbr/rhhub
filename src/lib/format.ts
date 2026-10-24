@@ -1,12 +1,16 @@
-export function formatSalary(min: number | null | undefined, max: number | null | undefined, period?: string | null | undefined): string {
-  if (min == null && max == null) return "A combinar";
-  const fmt = (v: number) =>
-    v >= 1000 ? `R$ ${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : `R$ ${v}`;
+export function formatSalary(min: number | null | undefined, max: number | null | undefined, period?: string | null | undefined, currency: string | null = "BRL"): string {
+  if (min == null && max == null) return "Salário não informado";
+  const fmt = (v: number) => {
+    try { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: currency || "XXX", maximumFractionDigits: 2 }).format(v); }
+    catch { return `${currency || "Moeda não informada"} ${v.toLocaleString("pt-BR")}`; }
+  };
+  const periods: Record<string, string> = { hourly: "hora", weekly: "semana", fortnightly: "quinzena", monthly: "mês", month: "mês", annual: "ano", yearly: "ano", year: "ano" };
+  const suffix = period ? ` / ${periods[period] || period}` : "";
   if (min != null && max != null) {
-    return `${fmt(min)} - ${fmt(max)}${period ? ` / ${period === "month" ? "mês" : period}` : ""}`;
+    return `${fmt(min)}${min !== max ? ` - ${fmt(max)}` : ""}${suffix}`;
   }
   const val = (min ?? max) as number;
-  return `${fmt(val)}${period ? ` / ${period === "month" ? "mês" : period}` : ""}`;
+  return `${fmt(val)}${suffix}`;
 }
 
 export function formatBRL(cents: number): string {

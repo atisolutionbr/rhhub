@@ -87,35 +87,38 @@ export default function HomePage() {
     const fetchData = async () => {
       const [jobsRes, catRes, compRes, compCountRes, countRes, candidatesRes] = await Promise.all([
         supabase
-          .from("jobs")
+          .from("live_jobs")
           .select("*, company:companies(*)")
           .eq("status", "published")
+          .eq("data_verified", true)
           .order("created_at", { ascending: false })
           .limit(6),
         supabase.from("categories").select("*").order("sort_order"),
         supabase
           .from("companies")
           .select("*")
+          .eq("data_verified", true)
           .order("is_verified", { ascending: false })
           .limit(8),
-        supabase.from("companies").select("id", { count: "exact", head: true }),
-        supabase.from("jobs").select("id", { count: "exact", head: true }).eq("status", "published"),
-        supabase.from("users").select("id", { count: "exact", head: true }).eq("user_type", "candidate"),
+        supabase.from("companies").select("id", { count: "exact", head: true }).eq("data_verified", true),
+        supabase.from("live_jobs").select("id", { count: "exact", head: true }).eq("status", "published").eq("data_verified", true),
+        supabase.rpc("portal_market_summary"),
       ]);
 
       setFeaturedJobs((jobsRes.data as Job[]) || []);
       setCategories((catRes.data as Category[]) || []);
       setTopCompanies((compRes.data as Company[]) || []);
       setTotalJobs(countRes.count || 0);
-      setTotalCandidates(candidatesRes.count || 0);
+      setTotalCandidates(candidatesRes.data?.sources?.length || 0);
       setTotalCompanies(compCountRes.count || 0);
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const { count: todayCount } = await supabase
-        .from("jobs")
+        .from("live_jobs")
         .select("id", { count: "exact", head: true })
         .eq("status", "published")
+        .eq("data_verified", true)
         .gte("created_at", today.toISOString());
       setNewJobsToday(todayCount || 0);
 
@@ -150,17 +153,17 @@ export default function HomePage() {
   const stats = [
     { icon: Briefcase, label: "Vagas Ativas", value: totalJobs.toLocaleString("pt-BR"), color: "text-blue-400" },
     { icon: Building2, label: "Empresas", value: totalCompanies.toLocaleString("pt-BR"), color: "text-cyan-400" },
-    { icon: Users, label: "Candidatos", value: totalCandidates.toLocaleString("pt-BR"), color: "text-emerald-400" },
-    { icon: TrendingUp, label: "Novas hoje", value: newJobsToday.toLocaleString("pt-BR"), color: "text-amber-400" },
+    { icon: Users, label: "Fontes conferidas", value: totalCandidates.toLocaleString("pt-BR"), color: "text-emerald-400" },
+    { icon: TrendingUp, label: "Adicionadas hoje", value: newJobsToday.toLocaleString("pt-BR"), color: "text-amber-400" },
   ];
 
   const atiFeatures = [
-    { icon: Cpu, name: "Ati Match", desc: "IA faz matching entre vaga e candidato", color: "from-blue-500 to-cyan-500" },
-    { icon: FileText, name: "Ati Resume", desc: "IA cria currículo perfeito", color: "from-emerald-500 to-teal-500" },
-    { icon: Brain, name: "Ati Interview", desc: "Simulador de entrevista com IA", color: "from-purple-500 to-pink-500" },
-    { icon: DollarSign, name: "Ati Salary", desc: "Descobre o salário ideal", color: "from-amber-500 to-orange-500" },
-    { icon: Rocket, name: "Ati Mentor", desc: "IA responde dúvidas de carreira", color: "from-rose-500 to-red-500" },
-    { icon: BookOpen, name: "Ati Academy", desc: "Cursos e certificados", color: "from-indigo-500 to-blue-500" },
+    { icon: Cpu, name: "Vagas com origem", desc: "Link para o anúncio e identificação da fonte", color: "from-blue-500 to-cyan-500" },
+    { icon: FileText, name: "Currículo", desc: "Upload e leitura de PDF e DOCX no seu perfil", color: "from-emerald-500 to-teal-500" },
+    { icon: Brain, name: "Candidaturas", desc: "Acompanhe candidaturas internas pelo painel", color: "from-purple-500 to-pink-500" },
+    { icon: DollarSign, name: "Salários publicados", desc: "Valores e moeda somente quando informados", color: "from-amber-500 to-orange-500" },
+    { icon: Rocket, name: "Fontes conferidas", desc: "Coleta com data de conferência e expiração", color: "from-rose-500 to-red-500" },
+    { icon: BookOpen, name: "Favoritos", desc: "Salve oportunidades para consultar depois", color: "from-indigo-500 to-blue-500" },
   ];
 
   return (
@@ -229,7 +232,7 @@ export default function HomePage() {
           <div className="mx-auto max-w-4xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-sm font-medium text-blue-300">
               <Sparkles className="h-4 w-4" />
-              {newJobsToday > 0 ? `${newJobsToday} novas vagas hoje` : "Vagas atualizadas diariamente"}
+              {newJobsToday > 0 ? `${newJobsToday} vagas adicionadas hoje` : "Vagas com fonte identificada"}
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-7xl">
@@ -240,7 +243,7 @@ export default function HomePage() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 sm:text-xl">
-              Mais de {totalJobs.toLocaleString("pt-BR")} vagas, atualizadas diariamente por inteligência artificial.
+              {totalJobs.toLocaleString("pt-BR")} vagas com origem identificada. Consulte a fonte e as condições de cada oportunidade.
               {" "}{newJobsToday > 0 && `${newJobsToday} novas vagas nos últimos dias. Candidate-se agora.`}
             </p>
 
@@ -279,7 +282,7 @@ export default function HomePage() {
               {["React", "Python", "Node.js", "DevOps", "Remoto"].map((tag) => (
                 <Link
                   key={tag}
-                  to={`/vagas?q=${encodeURIComponent(tag)}`}
+                  to={tag === "Remoto" ? "/vagas?modality=remote" : `/vagas?q=${encodeURIComponent(tag)}`}
                   className="rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
                 >
                   {tag}
@@ -314,7 +317,7 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold text-white sm:text-4xl">
               Recursos <span className="text-primary-400">Ati</span>
             </h2>
-            <p className="mt-2 text-slate-400">Ferramentas inteligentes para acelerar sua carreira</p>
+            <p className="mt-2 text-slate-400">Recursos disponíveis no portal</p>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {atiFeatures.map((feature) => {
@@ -371,7 +374,7 @@ export default function HomePage() {
           <div className="mb-10 flex items-end justify-between">
             <div>
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Vagas em destaque</h2>
-              <p className="mt-2 text-slate-500 dark:text-slate-400">As melhores oportunidades de agora</p>
+              <p className="mt-2 text-slate-500 dark:text-slate-400">Oportunidades coletadas das fontes identificadas</p>
             </div>
             <Link
               to="/vagas"
@@ -405,7 +408,7 @@ export default function HomePage() {
                           {job.company?.name || "Empresa"}
                         </div>
                         <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {job.location_city || "Brasil"}
+                          {job.source_location_text || job.location_city || job.location_country || "Consulte as restrições na fonte"}
                         </div>
                       </div>
                     </div>
@@ -431,7 +434,7 @@ export default function HomePage() {
                   </div>
                   <div className="mt-auto flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                     <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                      {formatSalary(job.salary_min, job.salary_max, job.salary_period)}
+                      {job.salary_text || formatSalary(job.salary_min, job.salary_max, job.salary_period, job.salary_currency)}
                     </span>
                     <span className="text-xs text-slate-400 dark:text-slate-500">
                       {timeAgo(job.created_at)}
@@ -454,8 +457,8 @@ export default function HomePage() {
       <section className="section-padding bg-slate-50 dark:bg-slate-950">
         <div className="container-max">
           <div className="mb-10 text-center">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Empresas que confiam no portal</h2>
-            <p className="mt-2 text-slate-500 dark:text-slate-400">As melhores empresas de tecnologia</p>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Empresas anunciadas nas fontes</h2>
+            <p className="mt-2 text-slate-500 dark:text-slate-400">Nomes informados pelos anúncios, sem indicação de parceria</p>
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {topCompanies.map((company) => (

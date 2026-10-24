@@ -1,0 +1,11 @@
+[Unit]
+Description=Check public feed refresh and deferred pagination hourly
+
+[Timer]
+OnCalendar=*-*-* *:15:00 America/Sao_Paulo
+RandomizedDelaySec=180
+Persistent=true
+Unit=rhhub-sync.service
+
+[Install]
+WantedBy=timers.target

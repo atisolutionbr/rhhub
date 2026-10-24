@@ -1,22 +1,16 @@
-# Implantação e revisão — 23/10/2026
+# Implantação auditada — 24/10/2026
 
 Aplicação: https://rh.atisolution.com.br
 Repositório: https://github.com/atisolutionbr/rhhub
 
-## Produção r4
+Versão r8 conectada ao PostgreSQL da VPS. Catálogo público inicial: 1.285 anúncios com origem identificada — 1.158 Himalayas, 125 CI&T/Lever e dois Remotive. Valores, moeda, período, localizações e links preservam as condições da fonte. A coleta inicial da Himalayas foi parcial por HTTP 429, com retomada e limites configurados. Não há conexão alegada a portais privados sem acesso real.
 
-Frontend conectado ao backend da VPS por HTTPS em /backend. PostgreSQL, Auth, REST, Storage e sete funções executam no projeto isolado rhhub-backend. A página inicial carregou 5.028 vagas e 15 empresas no navegador.
+Os 5.028 anúncios antigos foram preservados em quarentena, incluindo 5.000 gerados por migração de demonstração. Referências salariais, rankings e cadastros sem evidência não participam das páginas públicas. As contas e os vínculos existentes foram preservados.
 
-Exportação administrativa por SQL sem transferência Claim: 20 tabelas, oito usuários Auth, oito identidades e metadados de um currículo privado. Dados restaurados e hashes de senha preservados. Backups integrais privados fora do Git; backup PostgreSQL pré-troca gerado e conferido.
+Foram removidos números comerciais, vagas internas fictícias e promessas de IA sem implementação. Salários são dos anúncios, não estimativas. Planos pagos ficaram indisponíveis. Novas vagas internas precisam de revisão administrativa. Importadores legados foram desativados; APIs documentadas e serviço systemd fazem a coleta.
 
-Migrações 021 e 022 aplicadas na VPS para proteger privilégios, assinaturas e importadores. Doze verificações do banco passaram. Cadastro, login por senha, upload/download privado, isolamento entre candidatos e extração de texto, PDF e DOCX passaram com dados temporários removidos ao final. Auth, PostgreSQL e Storage apresentam healthchecks saudáveis.
+Build TypeScript/Vite aprovado; testes de acesso, cache e formato salarial aprovados. Testes de normalização, ausência de dados e rate limit aprovados. Dezessete verificações não destrutivas passaram por HTTPS/PostgreSQL. A captura visual final não pôde ser refeita por falha local da ferramenta de navegador; não apresentar screenshots antigos como evidência desta versão.
 
-## Revisão da aplicação
+Relatório completo: AUDITORIA_VAGAS.md. Operação: OPERACAO.md. Portais e acessos: PORTAIS.md. Segredos e backups permanecem fora do Git.
 
-Build TypeScript/Vite aprovado; dependências atualizadas e nove testes de acesso/cache aprovados na revisão r2. Rotas privadas exigem perfil e papel correspondentes. Cache offline restrito a conteúdo público. Cadastro exige oito caracteres. Gráficos da empresa usam dados reais. Nginx protege arquivos ocultos e aplica cache adequado a HTML, service worker e assets versionados. Versões anteriores preservadas para rollback.
-
-## Pendências
-
-Falta o binário de um currículo privado; a referência foi preservada. A conta demo não é dona desse arquivo. Preservar o backend original até recuperar o documento.
-
-As senhas originais foram preservadas; a migração não redefine uma senha esquecida. SMTP de recuperação de senha e homologação completa dos importadores ainda pendentes. Cobrança PIX continua manual, sem integração automática. A validação de cadastro/login com conta temporária não substitui a homologação real de todos os papéis e fluxos.
+Continuam pendentes o binário de um currículo original, SMTP e envio de alertas. A disponibilidade e a veracidade de declarações de empregadores não podem ser garantidas permanentemente por um agregador; os anúncios têm fonte, evidência e prazo de reconferência.

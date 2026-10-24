@@ -1,0 +1,18 @@
+[Unit]
+Description=RHHub verified public job feeds
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/rhhub/ingestion
+ExecStart=/usr/bin/python3 /opt/rhhub/ingestion/sync_verified_jobs.py
+User=root
+UMask=0077
+MemoryMax=180M
+TimeoutStartSec=1800
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/rhhub/backup/verified-feeds
+ProtectHome=true

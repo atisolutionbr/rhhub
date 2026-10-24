@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import type { Job, CandidateProfile } from "../lib/types";
+import type { Job } from "../lib/types";
 import {
   formatSalary,
   timeAgo,
@@ -40,8 +40,6 @@ export default function JobDetailPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [coverLetter, setCoverLetter] = useState("");
   const [showApplyForm, setShowApplyForm] = useState(false);
-  const [showExternalApply, setShowExternalApply] = useState(false);
-  const [candidateProfile, setCandidateProfile] = useState<CandidateProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,9 +47,9 @@ export default function JobDetailPage() {
     const fetchJob = async () => {
       setLoading(true);
       const { data } = await supabase
-        .from("jobs")
+        .from("live_jobs")
         .select("*, company:companies(*), category:categories(*)")
-        .eq("id", id)
+        .eq("id", id).eq("data_verified", true)
         .maybeSingle();
       setJob(data as Job);
       setLoading(false);
@@ -73,13 +71,6 @@ export default function JobDetailPage() {
           .maybeSingle();
         setApplied(!!app);
 
-        // Fetch candidate profile for external applications
-        const { data: cp } = await supabase
-          .from("candidate_profiles")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        setCandidateProfile(cp as CandidateProfile | null);
       }
     };
     fetchJob();
@@ -111,31 +102,6 @@ export default function JobDetailPage() {
       setApplied(true);
       setShowApplyForm(false);
     }
-  };
-
-  const handleExternalApply = async () => {
-    if (!user || !job) return;
-
-    setApplying(true);
-    const { error: appError } = await supabase.from("job_applications").insert({
-      job_id: job.id,
-      user_id: user.id,
-      cover_letter: coverLetter || null,
-      status: "pending",
-      source: "external",
-    });
-
-    if (appError) {
-      setError(`Erro ao registrar candidatura: ${appError.message}`);
-      setApplying(false);
-      return;
-    }
-
-    setApplying(false);
-    setApplied(true);
-    setShowExternalApply(false);
-
-    window.open(job.external_url || "#", "_blank", "noopener,noreferrer");
   };
 
   const toggleFavorite = async () => {
@@ -172,19 +138,6 @@ export default function JobDetailPage() {
 
   const isExternal = !job.is_internal && job.external_url;
 
-  // Build profile summary for external application
-  const profileSummary = [
-    { label: "Nome", value: profile?.full_name || "" },
-    { label: "Email", value: user?.email || "" },
-    { label: "Telefone", value: profile?.phone || "" },
-    { label: "Título", value: candidateProfile?.headline || "" },
-    { label: "Cidade", value: [profile?.location_city, profile?.location_state].filter(Boolean).join(", ") || "" },
-    { label: "LinkedIn", value: profile?.linkedin_url || "" },
-    { label: "GitHub", value: profile?.github_url || "" },
-    { label: "Portfólio", value: profile?.portfolio_url || "" },
-    { label: "Currículo", value: candidateProfile?.resume_url ? "Enviado" : "Não enviado" },
-  ].filter((s) => s.value);
-
   return (
     <div className="bg-slate-50 dark:bg-slate-950 min-h-screen animate-fade-in">
       <div className="container-max px-4 py-6 sm:px-6 lg:px-8">
@@ -215,7 +168,7 @@ export default function JobDetailPage() {
                   <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
-                      {job.location_city || "Brasil"}
+                      {job.source_location_text || job.location_city || job.location_country || "Consulte as restrições na fonte"}
                       {job.location_state ? `, ${job.location_state}` : ""}
                     </span>
                     <span className="flex items-center gap-1">
@@ -224,13 +177,21 @@ export default function JobDetailPage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
-                      {timeAgo(job.created_at)}
+                      {timeAgo(job.published_at || job.created_at)}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Tags */}
+              <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-slate-800">
+                {job.source_url ? <a className="font-semibold text-primary-700 underline" href={job.source_url} target="_blank" rel="noopener noreferrer">Fonte: {job.external_source} — ver anúncio original</a> : <p>Vaga cadastrada pela empresa e revisada no portal.</p>}
+                {job.last_checked_at && <p className="mt-2">Conferida na fonte em {new Date(job.last_checked_at).toLocaleString("pt-BR")}.</p>}
+                <p className="mt-2">A disponibilidade pode mudar. Confirme requisitos e condições no anúncio original.</p>
+                {job.location_restrictions && <p className="mt-2">Localizações aceitas pela fonte: {job.location_restrictions.length ? job.location_restrictions.join(", ") : "Sem restrição de país informada"}.</p>}
+                {!!job.timezone_restrictions?.length && <p className="mt-2">Fusos aceitos (UTC): {job.timezone_restrictions.join(", ")}.</p>}
+                {job.employment_type_text && <p className="mt-2">Regime informado pela fonte: {job.employment_type_text}. Não implica contratação CLT no Brasil.</p>}
+              </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className="badge bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400">{modalityLabel(job.modality)}</span>
                 <span className="badge bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">{employmentLabel(job.employment_type)}</span>
@@ -294,7 +255,7 @@ export default function JobDetailPage() {
                   Salário
                 </div>
                 <div className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                  {formatSalary(job.salary_min, job.salary_max, job.salary_period)}
+                  {job.salary_text || formatSalary(job.salary_min, job.salary_max, job.salary_period, job.salary_currency)}
                 </div>
               </div>
 
@@ -313,7 +274,7 @@ export default function JobDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 dark:text-slate-400">Publicada</span>
-                  <span className="font-medium text-slate-900 dark:text-white">{formatDate(job.created_at)}</span>
+                  <span className="font-medium text-slate-900 dark:text-white">{formatDate(job.published_at || job.created_at)}</span>
                 </div>
               </div>
 
@@ -324,73 +285,13 @@ export default function JobDetailPage() {
                 </div>
               )}
 
-              {applied ? (
-                <div className="flex items-center justify-center gap-2 rounded-lg bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
-                  <CheckCircle2 className="h-5 w-5" />
-                  Candidatura enviada!
-                </div>
-              ) : isExternal ? (
+              {isExternal ? (
                 <div className="space-y-3">
-                  {showExternalApply ? (
-                    <div className="space-y-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                        <User className="h-4 w-4 text-primary-600 dark:text-primary-400" />
-                        Seus dados que serão usados
-                      </div>
-                      <div className="space-y-1.5">
-                        {profileSummary.map((s) => (
-                          <div key={s.label} className="flex justify-between gap-2 text-xs">
-                            <span className="text-slate-500 dark:text-slate-400">{s.label}:</span>
-                            <span className="text-right font-medium text-slate-800">{s.value}</span>
-                          </div>
-                        ))}
-                      </div>
-                      {profileSummary.length < 3 && (
-                        <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
-                          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-                          <span>Seu perfil está incompleto. Preencha mais dados para aumentar suas chances.</span>
-                        </div>
-                      )}
-                      <textarea
-                        value={coverLetter}
-                        onChange={(e) => setCoverLetter(e.target.value)}
-                        placeholder="Mensagem para o recrutador (opcional)"
-                        rows={3}
-                        className="input-field text-sm"
-                      />
-                      <button
-                        onClick={handleExternalApply}
-                        disabled={applying}
-                        className="btn-primary w-full"
-                      >
-                        {applying ? (
-                          <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
-                        ) : (
-                          <><Send className="h-4 w-4" /> Confirmar e ir para o site</>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setShowExternalApply(false)}
-                        className="btn-secondary w-full"
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        if (!user) {
-                          navigate("/login", { state: { from: `/vagas/${id}` } });
-                        } else {
-                          setShowExternalApply(true);
-                        }
-                      }}
-                      className="btn-primary w-full"
-                    >
-                      Candidatar no site original <ExternalLink className="h-4 w-4" />
-                    </button>
-                  )}
+                  <a href={job.external_url!} target="_blank" rel="noopener noreferrer" className="btn-primary w-full">Candidatar no site original <ExternalLink className="h-4 w-4" /></a>
+                  <p className="text-xs text-slate-500">A candidatura é concluída na fonte. Abrir o link não envia seu currículo nem garante uma candidatura.</p>
                 </div>
+              ) : applied ? (
+                <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700">Candidatura interna registrada.</div>
               ) : showApplyForm ? (
                 <form onSubmit={handleApply} className="space-y-3">
                   <textarea

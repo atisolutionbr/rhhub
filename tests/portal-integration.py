@@ -5,14 +5,21 @@ JSON entries: {email, password, role}. No credentials or tokens are printed.
 Only records bearing a unique test UUID are removed during cleanup.
 """
 import json
+import os
 import sys
 import uuid
 import urllib.request
 import urllib.error
+import urllib.parse
 from pathlib import Path
 
-env = dict(line.split('=', 1) for line in Path('/opt/rhhub/backend/.env.backend').read_text().splitlines() if '=' in line)
-base = 'https://rh.atisolution.com.br/backend/'
+base = os.environ.get('RHHUB_TEST_API_BASE', 'http://127.0.0.1:18121/')
+if urllib.parse.urlparse(base).hostname not in ('127.0.0.1', 'localhost') or urllib.parse.urlparse(base).port == 18120:
+    raise SystemExit('Mutation tests require a disposable local staging backend; production is forbidden.')
+env_path = os.environ.get('RHHUB_TEST_ENV_FILE')
+if not env_path:
+    raise SystemExit('Set RHHUB_TEST_ENV_FILE to the disposable staging credential file.')
+env = dict(line.split('=', 1) for line in Path(env_path).read_text().splitlines() if '=' in line)
 checks, sessions, cleanup = {}, {}, []
 
 def request(path, role=None, method='GET', data=None):
@@ -63,7 +70,11 @@ try:
     check('company_creates_draft', status == 201 and len(rows) == 1)
     check('candidate_cannot_read_draft', request('rest/v1/jobs?id=eq.' + job_id, 'candidate') == (200, []))
     status, rows = request('rest/v1/jobs?id=eq.' + job_id, 'company', 'PATCH', {'status': 'published'})
-    check('company_publishes_own_job', status == 200 and len(rows) == 1)
+    check('company_submits_for_review', status == 200 and len(rows) == 1 and rows[0]['status'] == 'pending' and not rows[0]['data_verified'])
+    status, verified = request('rest/v1/companies?id=eq.' + company['id'], 'admin', 'PATCH', {'is_verified': True})
+    check('admin_verifies_staging_employer', status == 200 and verified[0]['is_verified'])
+    status, rows = request('rest/v1/jobs?id=eq.' + job_id, 'admin', 'PATCH', {'status': 'published'})
+    check('admin_approves_internal_job', status == 200 and rows[0]['data_verified'])
     status, rows = request('rest/v1/jobs?id=eq.' + job_id, 'candidate', 'PATCH', {'title': 'Unauthorized'})
     check('candidate_cannot_edit_job', status == 403 or (status == 200 and rows == []))
 
