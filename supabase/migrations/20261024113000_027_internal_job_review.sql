@@ -27,6 +27,7 @@ BEGIN
          RAISE EXCEPTION 'Revise e verifique o cadastro da empresa antes de publicar a vaga' USING ERRCODE='42501';
        END IF;
        NEW.data_verified:=true; NEW.last_checked_at:=now();
+       NEW.published_at:=coalesce(NEW.published_at,now());
      END IF;
    ELSE
      NEW.data_verified:=false; NEW.source_payload:=NULL; NEW.source_payload_hash:=NULL;

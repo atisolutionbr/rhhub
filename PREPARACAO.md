@@ -9,7 +9,7 @@ Os 5.028 anúncios antigos foram preservados em quarentena, incluindo 5.000 gera
 
 Foram removidos números comerciais, vagas internas fictícias e promessas de IA sem implementação. Salários são dos anúncios, não estimativas. Planos pagos ficaram indisponíveis. Novas vagas internas precisam de revisão administrativa. Importadores legados foram desativados; APIs documentadas e serviço systemd fazem a coleta.
 
-Build TypeScript/Vite aprovado; testes de acesso, cache e formato salarial aprovados. Testes de normalização, ausência de dados e rate limit aprovados. Dezessete verificações não destrutivas passaram por HTTPS/PostgreSQL. A captura visual final não pôde ser refeita por falha local da ferramenta de navegador; não apresentar screenshots antigos como evidência desta versão.
+Build TypeScript/Vite aprovado; testes de acesso, cache e formato salarial aprovados. Testes de normalização, ausência de dados e rate limit aprovados. Vinte verificações não destrutivas passaram por HTTPS/PostgreSQL. A captura visual final não pôde ser refeita por falha local da ferramenta de navegador; não apresentar screenshots antigos como evidência desta versão.
 
 Relatório completo: AUDITORIA_VAGAS.md. Operação: OPERACAO.md. Portais e acessos: PORTAIS.md. Segredos e backups permanecem fora do Git.
 
